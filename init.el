@@ -78,7 +78,10 @@
   :config
   (setq doom-modeline-height 25
         doom-modeline-icon nil  ; Disable icons in terminal
-        doom-modeline-unicode-fallback t))  ; Use unicode symbols instead
+        doom-modeline-unicode-fallback t  ; Use unicode symbols instead
+        doom-modeline-buffer-state-icon nil  ; Remove lock icon for read-only buffers
+        doom-modeline-modal nil  ; Remove modal editing states
+        doom-modeline-buffer-modification-icon nil))  ; Remove modification indicator
 
 ;; Icons (required for treemacs and doom-modeline)
 (use-package all-the-icons
