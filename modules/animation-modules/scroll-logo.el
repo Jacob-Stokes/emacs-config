@@ -64,9 +64,14 @@
                   (forward-char (max 0 logo-x))
 
                   ;; Draw visible portion of logo line
-                  (let ((start-char (max 0 (- logo-x)))
-                        (end-char (min logo-width (+ (- logo-x) matrix-width))))
-                    (when (< start-char end-char)
+                  (let* ((logo-line-len (length logo-line))
+                         (start-char (max 0 (- logo-x)))
+                         (end-char (min logo-line-len (+ start-char (- matrix-width (max 0 logo-x))))))
+                    (when (and (< start-char end-char)
+                               (>= start-char 0)
+                               (<= start-char logo-line-len)
+                               (>= end-char 0)
+                               (<= end-char logo-line-len))
                       (let ((visible-text (substring logo-line start-char end-char)))
                         (delete-region (point) (min (+ (point) (length visible-text))
                                                    (line-end-position)))
