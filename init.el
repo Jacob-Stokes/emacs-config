@@ -316,8 +316,10 @@
   (other-window 1)
   (switch-to-buffer (create-welcome-buffer))
 
-  ;; First split vertically for right column
-  (split-window-horizontally)
+  ;; First split vertically for right column (60% editor, 40% right pane)
+  (let* ((current-width (window-width))
+         (editor-width (floor (* current-width 0.6))))
+    (split-window-horizontally editor-width))
   (other-window 1)
 
   ;; Create header buffer for right pane
