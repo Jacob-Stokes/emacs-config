@@ -297,10 +297,12 @@
 (defvar rainbow-index 0)
 
 ;; ASCII face animation variables
-(defvar ascii-faces '("(◕‿◕)" "(◔‿◔)" "(◉‿◉)" "(⊙‿⊙)" "(◕‿◕)" "(◔‿◔)"))
+(defvar claude-faces '("(◕‿◕)" "(◔‿◔)" "(◉‿◉)" "(⊙‿⊙)" "(◕‿◕)" "(◔‿◔)"))
+(defvar codex-faces '("[◉_◉]" "[◔_◔]" "[⊙_⊙]" "[○_○]" "[●_●]" "[◔_◔]"))
 (defvar ascii-face-index 0)
 (defvar ascii-face-timer nil)
 (defvar ascii-face-buffer nil)
+(defvar current-assistant-mode "claude")  ; Track which assistant is active
 
 ;; Function to update rainbow colors - works with both Welcome and Dashboard
 (defun update-rainbow-logo ()
@@ -349,10 +351,15 @@
     (erase-buffer)
     (setq mode-line-format nil)  ; Hide modeline
     (display-line-numbers-mode -1)  ; No line numbers
-    (insert "\n  ")
-    (insert (propertize (nth ascii-face-index ascii-faces)
-                       'face '(:foreground "cyan" :weight bold :height 1.5)))
-    (insert "\n  vibing...")
+    (let* ((faces (if (string= current-assistant-mode "claude") claude-faces codex-faces))
+           (face (nth ascii-face-index faces))
+           (color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
+           (label (if (string= current-assistant-mode "claude") "Claude" "Codex")))
+      (insert "\n\n  ")
+      (insert (propertize face 'face `(:foreground ,color :weight bold :height 3.0)))
+      (insert "\n\n  ")
+      (insert (propertize label 'face `(:foreground ,color :height 1.2)))
+      (insert " vibing..."))
     (read-only-mode 1)))
 
 ;; Function to update ASCII face
@@ -362,12 +369,19 @@
     (with-current-buffer ascii-face-buffer
       (read-only-mode -1)
       (erase-buffer)
-      (insert "\n  ")
-      (insert (propertize (nth ascii-face-index ascii-faces)
-                         'face '(:foreground "cyan" :weight bold :height 1.5)))
-      (insert "\n  vibing...")
+      (let* ((faces (if (string= current-assistant-mode "claude") claude-faces codex-faces))
+             (face (nth ascii-face-index faces))
+             (color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
+             (label (if (string= current-assistant-mode "claude") "Claude" "Codex")))
+        (insert "\n\n  ")
+        (insert (propertize face 'face `(:foreground ,color :weight bold :height 3.0)))
+        (insert "\n\n  ")
+        (insert (propertize label 'face `(:foreground ,color :height 1.2)))
+        (insert " vibing..."))
       (read-only-mode 1))
-    (setq ascii-face-index (mod (1+ ascii-face-index) (length ascii-faces)))))
+    (setq ascii-face-index (mod (1+ ascii-face-index)
+                                (length (if (string= current-assistant-mode "claude")
+                                           claude-faces codex-faces))))))
 
 ;; Function to start ASCII face animation
 (defun start-ascii-face-animation ()
@@ -489,7 +503,9 @@
                 (progn
                   (switch-to-buffer claude-terminal-buffer)
                   (setq right-pane-active-terminal "claude")
+                  (setq current-assistant-mode "claude")  ; Update assistant mode
                   (update-right-pane-header)
+                  (update-ascii-face)  ; Update the face immediately
                   (message "Switched to Claude terminal (C-c g for Codex)"))
               (message "Claude terminal not found")))
            ((equal terminal-type "gpt")
@@ -497,7 +513,9 @@
                 (progn
                   (switch-to-buffer gpt-terminal-buffer)
                   (setq right-pane-active-terminal "gpt")
+                  (setq current-assistant-mode "codex")  ; Update assistant mode
                   (update-right-pane-header)
+                  (update-ascii-face)  ; Update the face immediately
                   (message "Switched to Codex terminal (C-c c for Claude)"))
               (message "Codex terminal not found"))))
           ;; Stay in the right pane terminal window (don't return)
