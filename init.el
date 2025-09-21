@@ -692,11 +692,11 @@
       ;; Open standard terminal at bottom left
       (ansi-term "/bin/bash" "bottom-terminal")
 
-      ;; Move to bottom right for ASCII face
+      ;; Move to bottom right for matrix rain
       (other-window 1)
-      (create-ascii-face-buffer)
-      (switch-to-buffer ascii-face-buffer)
-      (start-ascii-face-animation)
+      (create-matrix-rain-buffer)
+      (switch-to-buffer matrix-rain-buffer)
+      (start-matrix-rain-animation)
       (set-window-dedicated-p (selected-window) t)
       (set-window-parameter (selected-window) 'no-other-window t)
 
