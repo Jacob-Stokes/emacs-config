@@ -56,7 +56,7 @@
 (defvar animation-switch-timer nil
   "Timer for automatic animation switching.")
 
-(defvar animation-switch-interval 30
+(defvar animation-switch-interval 5
   "Seconds between automatic animation switches.")
 
 ;; Master animation control functions
@@ -83,15 +83,21 @@
 
   ;; Start new animation
   (condition-case err
-      (cond
-       ((string= current-animation-mode "matrix")
-        (create-matrix-rain-buffer)
-        (init-matrix-rain)
-        (start-matrix-rain-animation))
-       ((string= current-animation-mode "aquarium")
-        (start-aquarium-animation))
-       ((string= current-animation-mode "starfield")
-        (start-starfield-animation)))
+      (progn
+        ;; Ensure shared buffer exists and is writable
+        (when (not (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer)))
+          (create-matrix-rain-buffer))
+        (with-current-buffer matrix-rain-buffer
+          (when buffer-read-only (read-only-mode -1)))
+
+        (cond
+         ((string= current-animation-mode "matrix")
+          (init-matrix-rain)
+          (start-matrix-rain-animation))
+         ((string= current-animation-mode "aquarium")
+          (start-aquarium-animation))
+         ((string= current-animation-mode "starfield")
+          (start-starfield-animation))))
     (error (message "Error starting animation: %s" err)))
 
   (message "Switched to %s animation" current-animation-mode))
