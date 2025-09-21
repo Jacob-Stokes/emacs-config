@@ -355,8 +355,8 @@
   ;; Get actual window dimensions
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (window-width win))
-      (setq matrix-height (window-height win))))
+      (setq matrix-width (- (window-width win) 2))  ; Account for margins
+      (setq matrix-height (- (window-height win) 1))))  ; Account for mode line
   (setq matrix-columns (make-vector matrix-width nil))
   (dotimes (i matrix-width)
     (aset matrix-columns i (cons (random matrix-height) (random 256)))))
@@ -382,8 +382,8 @@
       ;; Update dimensions if window size changed
       (let ((win (get-buffer-window matrix-rain-buffer)))
         (when win
-          (let ((new-width (window-width win))
-                (new-height (1- (window-height win))))  ; -1 for mode line
+          (let ((new-width (- (window-width win) 2))  ; Account for margins
+                (new-height (- (window-height win) 1)))  ; Account for mode line
             (when (or (/= new-width matrix-width)
                       (/= new-height matrix-height))
               (setq matrix-width new-width)
@@ -708,12 +708,6 @@
 
       ;; Open standard terminal at bottom left
       (ansi-term "/bin/bash" "bottom-terminal")
-      (with-current-buffer "*bottom-terminal*"
-        (sleep-for 0.2)
-        ;; Set a minimal prompt and clear
-        (term-send-string (get-buffer-process (current-buffer)) "PS1='> '\n")
-        (term-send-string (get-buffer-process (current-buffer)) "clear\n")
-        (term-send-string (get-buffer-process (current-buffer)) "echo 'Terminal ready. Start typing...'\n"))
 
       ;; Move to bottom right for matrix rain
       (other-window 1)
