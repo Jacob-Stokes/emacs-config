@@ -3,8 +3,9 @@
 ;; Add modules directory to load path
 (add-to-list 'load-path (expand-file-name "modules" user-emacs-directory))
 
-;; Load animation module
+;; Load modules
 (require 'vibe-animations)
+(require 'vibe-panel)
 
 ;; Package management setup
 (require 'package)
@@ -385,80 +386,10 @@
 (defvar right-pane-active-terminal "claude" "Currently active terminal in right pane")
 
 ;; Function to create/update right pane header
-(defun update-right-pane-header ()
-  "Update the right pane header to show active tab"
-  (when (and right-pane-header-buffer (buffer-live-p right-pane-header-buffer))
-    (with-current-buffer right-pane-header-buffer
-      (read-only-mode -1)
-      (erase-buffer)
-      (insert " ")
-      ;; Claude tab
-      (if (string= right-pane-active-terminal "claude")
-          (insert (propertize "[Claude]" 'face '(:foreground "cyan" :weight bold :underline t)))
-        (insert (propertize " Claude " 'face '(:foreground "gray"))))
-      (insert " ")
-      ;; GPT/Codex tab
-      (if (string= right-pane-active-terminal "gpt")
-          (insert (propertize "[Codex]" 'face '(:foreground "green" :weight bold :underline t)))
-        (insert (propertize " Codex " 'face '(:foreground "gray"))))
-      (insert " ")
-      ;; Gemini tab
-      (if (string= right-pane-active-terminal "gemini")
-          (insert (propertize "[Gemini]" 'face '(:foreground "magenta" :weight bold :underline t)))
-        (insert (propertize " Gemini " 'face '(:foreground "gray"))))
-      (insert "  ")
-      (insert (propertize "(C-c c/g/m)" 'face '(:foreground "dark gray" :height 0.9)))
-      (read-only-mode 1))))
+;; Note: Right pane header now handled by vibe-update-panel-header in vibe-panel.el
 
-;; Function to switch between terminals in right pane
-(defun switch-right-terminal (terminal-type)
-  "Switch the right pane to show a specific terminal buffer"
-  (interactive)
-  (let ((current-window (selected-window)))
-    (if (and right-pane-window (window-live-p right-pane-window))
-        (progn
-          ;; Switch to the right window
-          (select-window right-pane-window)
-          ;; Switch to the appropriate buffer
-          (cond
-           ((equal terminal-type "claude")
-            (if (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
-                (progn
-                  (switch-to-buffer claude-terminal-buffer)
-                  (setq right-pane-active-terminal "claude")
-                  (setq current-assistant-mode "claude")  ; Update assistant mode
-                  (update-right-pane-header)
-                  (update-matrix-rain)  ; Update the matrix immediately
-                  (message "Switched to Claude terminal (C-c g for Codex, M-3 for Gemini)"))
-              (message "Claude terminal not found")))
-           ((equal terminal-type "gpt")
-            (if (and gpt-terminal-buffer (buffer-live-p gpt-terminal-buffer))
-                (progn
-                  (switch-to-buffer gpt-terminal-buffer)
-                  (setq right-pane-active-terminal "gpt")
-                  (setq current-assistant-mode "codex")  ; Update assistant mode
-                  (update-right-pane-header)
-                  (update-matrix-rain)  ; Update the matrix immediately
-                  (message "Switched to Codex terminal (C-c c for Claude, M-3 for Gemini)"))
-              (message "Codex terminal not found")))
-           ((equal terminal-type "gemini")
-            (if (and gemini-terminal-buffer (buffer-live-p gemini-terminal-buffer))
-                (progn
-                  (switch-to-buffer gemini-terminal-buffer)
-                  (setq right-pane-active-terminal "gemini")
-                  (setq current-assistant-mode "gemini")  ; Update assistant mode
-                  (update-right-pane-header)
-                  (update-matrix-rain)  ; Update the matrix immediately
-                  (message "Switched to Gemini terminal (C-c c for Claude, C-c g for Codex)"))
-              (message "Gemini terminal not found"))))
-          ;; Stay in the right pane terminal window (don't return)
-          )
-      (message "Right pane not found. Run setup-vscode-layout first."))))
-
-;; Create keybindings for quick terminal switching
-(global-set-key (kbd "C-c c") (lambda () (interactive) (switch-right-terminal "claude")))
-(global-set-key (kbd "C-c g") (lambda () (interactive) (switch-right-terminal "gpt")))
-(global-set-key (kbd "C-c j") (lambda () (interactive) (switch-right-terminal "gemini")))
+;; Note: Terminal switching now handled by new panel system
+;; Keybindings are automatically set up by vibe-panel.el
 
 ;; Keybinding to manually switch animation
 (global-set-key (kbd "C-c n") 'switch-animation-mode)
@@ -496,9 +427,9 @@
     (split-window-horizontally (- (floor (* (window-width) 0.35))))
     (other-window 1)
 
-    ;; Restore right pane if terminals exist
-    (when (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
-      (set-window-buffer (selected-window) claude-terminal-buffer))
+    ;; Restore right pane if panels exist
+    (when (and vibe-panels vibe-active-panel)
+      (vibe-switch-to-panel vibe-active-panel))
 
     ;; Go back to main window
     (other-window -1)))
@@ -507,8 +438,12 @@
 (defun setup-vscode-layout ()
   "Setup VS Code-like three-panel layout"
   (interactive)
+  ;; Initialize panel system if not already done
+  (unless (and vibe-panels (> (length vibe-panels) 0))
+    (vibe-initialize-panel-system))
+
   ;; If already set up, just reset the layout
-  (if (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
+  (if (and (boundp 'right-pane-window) right-pane-window)
       (reset-vscode-layout)
     ;; Otherwise do full setup
     (progn
@@ -522,53 +457,30 @@
       ;; Move to main editor window
       (other-window 1)
       (dashboard-refresh-buffer)
-      (start-rainbow-animation)  ; Start the rainbow effect
+      (vibe-start-animations)  ; Start the animations
 
       ;; First split vertically for right column (65% editor, 35% right pane)
       ;; Use negative value to make it proportional
       (split-window-horizontally (- (floor (* (window-width) 0.35))))
       (other-window 1)
 
-      ;; Create header buffer for right pane
-      (setq right-pane-header-buffer (get-buffer-create "*Right Pane Tabs*"))
-      (with-current-buffer right-pane-header-buffer
-        (display-line-numbers-mode -1)
-        (setq mode-line-format nil)  ; Hide modeline for header
-        (setq window-size-fixed t))  ; Prevent resizing
+      ;; Use new panel system for right pane
+      ;; Display panel header at top of right pane
+      (when (and vibe-panel-header-buffer (buffer-live-p vibe-panel-header-buffer))
+        (switch-to-buffer vibe-panel-header-buffer)
+        (let ((header-window (selected-window)))
+          (set-window-dedicated-p header-window t)
+          (set-window-parameter header-window 'no-other-window t))
+        (split-window-vertically 2)  ; Small window for header
+        (other-window 1)
 
-      ;; Display header at top of right pane
-      (switch-to-buffer right-pane-header-buffer)
-      (let ((header-window (selected-window)))
-        (set-window-dedicated-p header-window t)  ; Dedicate window to this buffer
-        (set-window-parameter header-window 'no-other-window t))  ; Skip in window cycling
-      (split-window-vertically 2)  ; Small window for header
-      (other-window 1)
+        ;; Store this window as the panel window
+        (setq vibe-panel-window (selected-window))
+        (setq right-pane-window (selected-window))  ; Keep old variable for compatibility
 
-      ;; Store this window as the right pane
-      (setq right-pane-window (selected-window))
-
-      ;; Create GPT/Codex terminal
-      (setq gpt-terminal-buffer (ansi-term "/bin/bash" "gpt-terminal"))
-      (with-current-buffer gpt-terminal-buffer
-        (sleep-for 0.2)
-        (term-send-string (get-buffer-process (current-buffer)) "codex\n"))
-
-      ;; Now create claude terminal
-      (setq claude-terminal-buffer (ansi-term "/bin/bash" "claude-terminal"))
-      (with-current-buffer claude-terminal-buffer
-        (sleep-for 0.2)
-        (term-send-string (get-buffer-process (current-buffer)) "claude\n"))
-
-      ;; Create Gemini terminal
-      (setq gemini-terminal-buffer (ansi-term "/bin/bash" "gemini-terminal"))
-      (with-current-buffer gemini-terminal-buffer
-        (sleep-for 0.2)
-        (term-send-string (get-buffer-process (current-buffer)) "gemini\n"))
-
-      ;; Make sure claude is displayed by default
-      (set-window-buffer right-pane-window claude-terminal-buffer)
-      (setq right-pane-active-terminal "claude")
-      (update-right-pane-header)
+        ;; Switch to first panel
+        (when vibe-panels
+          (vibe-switch-to-panel (caar vibe-panels))))
 
       ;; Go back to middle window - need to go through treemacs
       (other-window 1)  ; This should go to treemacs
@@ -600,10 +512,11 @@
       ;; Focus back on top middle editor window
       (other-window -1))))
 
-;; Setup layout on startup (with delay for package installation)
+;; Initialize panel system and setup layout on startup
 (add-hook 'emacs-startup-hook
           (lambda ()
             (when my/setup-vscode-layout-on-startup
+              (vibe-initialize-panel-system)
               (run-at-time "2 sec" nil #'setup-vscode-layout))))
 
 ;; Custom keybindings
