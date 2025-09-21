@@ -457,79 +457,122 @@
 ;; Enable automatic window resizing
 (setq window-combination-resize t)
 
+;; Function to reset layout (for resizing)
+(defun reset-vscode-layout ()
+  "Reset the VS Code layout maintaining existing buffers"
+  (interactive)
+  ;; Store current buffers if they exist
+  (let ((has-treemacs (treemacs-get-local-window))
+        (current-buffer (current-buffer)))
+    ;; Start fresh
+    (delete-other-windows)
+
+    ;; Restore treemacs
+    (when has-treemacs
+      (treemacs))
+
+    ;; If treemacs wasn't open but we want it
+    (unless (treemacs-get-local-window)
+      (treemacs))
+
+    ;; Go to main window
+    (other-window 1)
+
+    ;; Restore the buffer that was active or show dashboard
+    (if (and current-buffer (not (equal (buffer-name current-buffer) " *Treemacs-Scoped-Buffer-Perspective 1*")))
+        (switch-to-buffer current-buffer)
+      (dashboard-refresh-buffer))
+
+    ;; Re-create the right pane with proper proportions
+    (split-window-horizontally (- (floor (* (window-width) 0.35))))
+    (other-window 1)
+
+    ;; Restore right pane if terminals exist
+    (when (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
+      (set-window-buffer (selected-window) claude-terminal-buffer))
+
+    ;; Go back to main window
+    (other-window -1)))
+
 ;; Function to setup VS Code-like layout with multiple terminals
 (defun setup-vscode-layout ()
   "Setup VS Code-like three-panel layout"
   (interactive)
-  ;; Delete other windows
-  (delete-other-windows)
+  ;; If already set up, just reset the layout
+  (if (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
+      (reset-vscode-layout)
+    ;; Otherwise do full setup
+    (progn
+      ;; Delete other windows
+      (delete-other-windows)
 
-  ;; Open treemacs on the left
-  (treemacs)
+      ;; Open treemacs on the left (only if not already visible)
+      (unless (treemacs-get-local-window)
+        (treemacs))
 
-  ;; Create main editor window in center
-  (other-window 1)
-  (dashboard-refresh-buffer)
-  (start-rainbow-animation)  ; Start the rainbow effect
+      ;; Create main editor window in center
+      (other-window 1)
+      (dashboard-refresh-buffer)
+      (start-rainbow-animation)  ; Start the rainbow effect
 
-  ;; First split vertically for right column (65% editor, 35% right pane)
-  ;; Use negative value to make it proportional
-  (split-window-horizontally (- (floor (* (window-width) 0.35))))
-  (other-window 1)
+      ;; First split vertically for right column (65% editor, 35% right pane)
+      ;; Use negative value to make it proportional
+      (split-window-horizontally (- (floor (* (window-width) 0.35))))
+      (other-window 1)
 
-  ;; Create header buffer for right pane
-  (setq right-pane-header-buffer (get-buffer-create "*Right Pane Tabs*"))
-  (with-current-buffer right-pane-header-buffer
-    (display-line-numbers-mode -1)
-    (setq mode-line-format nil)  ; Hide modeline for header
-    (setq window-size-fixed t))  ; Prevent resizing
+      ;; Create header buffer for right pane
+      (setq right-pane-header-buffer (get-buffer-create "*Right Pane Tabs*"))
+      (with-current-buffer right-pane-header-buffer
+        (display-line-numbers-mode -1)
+        (setq mode-line-format nil)  ; Hide modeline for header
+        (setq window-size-fixed t))  ; Prevent resizing
 
-  ;; Display header at top of right pane
-  (switch-to-buffer right-pane-header-buffer)
-  (let ((header-window (selected-window)))
-    (set-window-dedicated-p header-window t)  ; Dedicate window to this buffer
-    (set-window-parameter header-window 'no-other-window t))  ; Skip in window cycling
-  (split-window-vertically 2)  ; Small window for header
-  (other-window 1)
+      ;; Display header at top of right pane
+      (switch-to-buffer right-pane-header-buffer)
+      (let ((header-window (selected-window)))
+        (set-window-dedicated-p header-window t)  ; Dedicate window to this buffer
+        (set-window-parameter header-window 'no-other-window t))  ; Skip in window cycling
+      (split-window-vertically 2)  ; Small window for header
+      (other-window 1)
 
-  ;; Store this window as the right pane
-  (setq right-pane-window (selected-window))
+      ;; Store this window as the right pane
+      (setq right-pane-window (selected-window))
 
-  ;; Create GPT terminal first
-  (setq gpt-terminal-buffer (ansi-term "/bin/bash" "gpt-terminal"))
-  (with-current-buffer gpt-terminal-buffer
-    (sleep-for 0.2)
-    ;; You can replace this with actual GPT/Codex command if you have one
-    (term-send-string (get-buffer-process (current-buffer)) "echo 'GPT Terminal Ready'\n")
-    (term-send-string (get-buffer-process (current-buffer)) "echo 'Install your GPT CLI tool or type: openai api completions.create ...'\n")
-    (term-send-string (get-buffer-process (current-buffer)) "echo 'Press C-c c for Claude, C-c g for GPT'\n"))
+      ;; Create GPT terminal first
+      (setq gpt-terminal-buffer (ansi-term "/bin/bash" "gpt-terminal"))
+      (with-current-buffer gpt-terminal-buffer
+        (sleep-for 0.2)
+        ;; You can replace this with actual GPT/Codex command if you have one
+        (term-send-string (get-buffer-process (current-buffer)) "echo 'GPT Terminal Ready'\n")
+        (term-send-string (get-buffer-process (current-buffer)) "echo 'Install your GPT CLI tool or type: openai api completions.create ...'\n")
+        (term-send-string (get-buffer-process (current-buffer)) "echo 'Press C-c c for Claude, C-c g for GPT'\n"))
 
-  ;; Now create claude terminal
-  (setq claude-terminal-buffer (ansi-term "/bin/bash" "claude-terminal"))
-  (with-current-buffer claude-terminal-buffer
-    (sleep-for 0.2)
-    (term-send-string (get-buffer-process (current-buffer)) "claude\n"))
+      ;; Now create claude terminal
+      (setq claude-terminal-buffer (ansi-term "/bin/bash" "claude-terminal"))
+      (with-current-buffer claude-terminal-buffer
+        (sleep-for 0.2)
+        (term-send-string (get-buffer-process (current-buffer)) "claude\n"))
 
-  ;; Make sure claude is displayed by default
-  (set-window-buffer right-pane-window claude-terminal-buffer)
-  (setq right-pane-active-terminal "claude")
-  (update-right-pane-header)
+      ;; Make sure claude is displayed by default
+      (set-window-buffer right-pane-window claude-terminal-buffer)
+      (setq right-pane-active-terminal "claude")
+      (update-right-pane-header)
 
-  ;; Go back to middle window - need to go through treemacs
-  (other-window 1)  ; This should go to treemacs
-  (other-window 1)  ; This should go to middle window
+      ;; Go back to middle window - need to go through treemacs
+      (other-window 1)  ; This should go to treemacs
+      (other-window 1)  ; This should go to middle window
 
-  ;; Now split the middle window for bottom terminal
-  (let* ((height (window-height))
-         (editor-height (floor (* height 0.8))))  ; 80% for editor, 20% for terminal
-    (split-window-vertically editor-height))
+      ;; Now split the middle window for bottom terminal
+      (let* ((height (window-height))
+             (editor-height (floor (* height 0.8))))  ; 80% for editor, 20% for terminal
+        (split-window-vertically editor-height))
 
-  (other-window 1)
-  ;; Open standard terminal at bottom middle
-  (ansi-term "/bin/bash" "bottom-terminal")
+      (other-window 1)
+      ;; Open standard terminal at bottom middle
+      (ansi-term "/bin/bash" "bottom-terminal")
 
-  ;; Focus back on top middle editor window
-  (other-window -1))
+      ;; Focus back on top middle editor window
+      (other-window -1))))
 
 ;; Setup layout on startup (with delay for package installation)
 (add-hook 'emacs-startup-hook
