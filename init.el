@@ -238,8 +238,8 @@
 ;; Set default directory
 (setq default-directory "/root/")
 
-;; Rainbow animation variables
-(defvar rainbow-colors '("#ff0000" "#ff7f00" "#ffff00" "#00ff00" "#0000ff" "#4b0082" "#9400d3"))
+;; Rainbow animation variables - muted/pastel rainbow
+(defvar rainbow-colors '("#ff6b9d" "#feca57" "#c7ecee" "#48dbfb" "#0abde3" "#667eea" "#a29bfe"))
 (defvar rainbow-timer nil)
 (defvar rainbow-index 0)
 
