@@ -76,7 +76,9 @@
 (use-package doom-modeline
   :init (doom-modeline-mode 1)
   :config
-  (setq doom-modeline-height 25))
+  (setq doom-modeline-height 25
+        doom-modeline-icon nil  ; Disable icons in terminal
+        doom-modeline-unicode-fallback t))  ; Use unicode symbols instead
 
 ;; Icons (required for treemacs and doom-modeline)
 (use-package all-the-icons
