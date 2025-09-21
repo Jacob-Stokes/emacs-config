@@ -454,6 +454,26 @@
 (global-set-key (kbd "C-c c") (lambda () (interactive) (switch-right-terminal "claude")))
 (global-set-key (kbd "C-c g") (lambda () (interactive) (switch-right-terminal "gpt")))
 
+;; Function to maintain window proportions on resize
+(defun maintain-window-proportions ()
+  "Maintain 65/35 split when window is resized"
+  (when (and (get-buffer "*dashboard*")
+             right-pane-window
+             (window-live-p right-pane-window))
+    (let* ((total-width (frame-width))
+           (treemacs-win (get-buffer-window " *Treemacs-Scoped-Buffer-Perspective 1*"))
+           (available-width (- total-width (if treemacs-win treemacs-width 0)))
+           (editor-width (floor (* available-width 0.65))))
+      (ignore-errors
+        (when treemacs-win
+          (window-resize right-pane-window
+                        (- (floor (* available-width 0.35)) (window-width right-pane-window))
+                        t))))))
+
+;; Hook to maintain proportions on frame resize
+(add-hook 'window-size-change-functions
+          (lambda (_) (maintain-window-proportions)))
+
 ;; Function to setup VS Code-like layout with multiple terminals
 (defun setup-vscode-layout ()
   "Setup VS Code-like three-panel layout"
@@ -470,9 +490,8 @@
   (start-rainbow-animation)  ; Start the rainbow effect
 
   ;; First split vertically for right column (65% editor, 35% right pane)
-  (let* ((current-width (window-width))
-         (editor-width (floor (* current-width 0.65))))
-    (split-window-horizontally editor-width))
+  ;; Use negative value to make it proportional
+  (split-window-horizontally (- (floor (* (window-width) 0.35))))
   (other-window 1)
 
   ;; Create header buffer for right pane
