@@ -217,20 +217,15 @@
   ;; Override the banner with our VIBEMACS logo
   (defun dashboard-insert-custom-banner ()
     "Insert our custom VIBEMACS banner with rainbow effect"
-    (let* ((logo-lines '("██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗"
-                         "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝"
-                         "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗"
-                         "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║"
-                         " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║"
-                         "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝"))
-           (logo-width 68)  ; Width of the logo
-           (window-width (window-width))
-           (padding (max 0 (/ (- window-width logo-width) 2))))
-      (insert "\n")
-      (dolist (line logo-lines)
-        (insert (make-string padding ?\s))  ; Add spaces for centering
-        (insert line "\n"))
-      (insert "\n")))
+    (insert "\n")
+    ;; Keep original spacing which was already nicely centered
+    (insert "   ██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+    (insert "   ██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+    (insert "   ██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+    (insert "   ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+    (insert "    ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+    (insert "     ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
+    (insert "\n"))
 
   (advice-add 'dashboard-insert-banner :override #'dashboard-insert-custom-banner)
 
