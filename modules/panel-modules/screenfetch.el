@@ -9,7 +9,7 @@
 (defvar screenfetch-panel-name "System"
   "Display name for this panel.")
 
-(defvar screenfetch-panel-key "i"
+(defvar screenfetch-panel-key "y"
   "Keybinding suffix for this panel (C-c + this key).")
 
 (defvar screenfetch-panel-color "#FF6B35"
