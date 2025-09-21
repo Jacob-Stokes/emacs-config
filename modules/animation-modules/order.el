@@ -11,7 +11,7 @@
 
 ;; Define which animations to cycle through and in what order
 ;; Comment out or remove this to cycle through all animations alphabetically
-(defvar vibe-animation-cycle '("starfield" "matrix" "aquarium")
+(defvar vibe-animation-cycle '("starfield" "matrix" "aquarium" "scroll-logo")
   "List of animation modes to cycle through in order.
 If nil or not defined, all animations will be cycled alphabetically.")
 

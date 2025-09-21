@@ -73,7 +73,8 @@
         ;; Stop all animations first to avoid conflicts
         (stop-matrix-rain-animation)
         (stop-aquarium-animation)
-        (stop-starfield-animation))
+        (stop-starfield-animation)
+        (stop-scroll-logo-animation))
     (error (message "Error stopping animations: %s" err)))
 
   ;; Move to next mode
@@ -97,7 +98,9 @@
          ((string= current-animation-mode "aquarium")
           (start-aquarium-animation))
          ((string= current-animation-mode "starfield")
-          (start-starfield-animation))))
+          (start-starfield-animation))
+         ((string= current-animation-mode "scroll-logo")
+          (start-scroll-logo-animation))))
     (error (message "Error starting animation: %s" err)))
 
   (message "Switched to %s animation" current-animation-mode))
@@ -133,7 +136,9 @@
    ((string= current-animation-mode "aquarium")
     (start-aquarium-animation))
    ((string= current-animation-mode "starfield")
-    (start-starfield-animation)))
+    (start-starfield-animation))
+   ((string= current-animation-mode "scroll-logo")
+    (start-scroll-logo-animation)))
   (start-animation-switcher))
 
 (defun vibe-stop-animations ()
@@ -143,6 +148,7 @@
   (stop-matrix-rain-animation)
   (stop-aquarium-animation)
   (stop-starfield-animation)
+  (stop-scroll-logo-animation)
   (stop-rainbow-animation))
 
 (defun vibe-set-animation (mode)
