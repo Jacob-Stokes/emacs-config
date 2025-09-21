@@ -1,0 +1,48 @@
+# Compiled
+*.elc
+*.eln
+
+# Packaging
+.cask/
+dist/
+elpa/
+
+# Backup files
+*~
+.#*
+\#*\#
+
+# Auto-save files
+auto-save-list/
+auto-saves/
+*.auto-save
+
+# Backups
+backups/
+
+# Cache
+.cache/
+eln-cache/
+
+# Session files
+session.*
+
+# Directory configuration
+.dir-locals.el
+
+# Network security
+network-security.data
+
+# Custom variables
+custom.el
+
+# Projectile
+.projectile
+projectile-bookmarks.eld
+
+# Treemacs
+.treemacs-persist
+
+# Lock files
+*.lock
+package-lock.json
