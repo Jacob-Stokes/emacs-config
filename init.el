@@ -217,17 +217,15 @@
   ;; Override the banner with our VIBEMACS logo
   (defun dashboard-insert-custom-banner ()
     "Insert our custom VIBEMACS banner with rainbow effect"
-    (let ((logo-lines '("██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗"
-                        "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝"
-                        "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗"
-                        "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║"
-                        " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║"
-                        "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝")))
-      (insert "\n")
-      ;; Use dashboard's centering approach
-      (dolist (line logo-lines)
-        (insert (dashboard-center-line line) "\n"))
-      (insert "\n")))
+    (insert "\n")
+    ;; Center with more padding (about 25 spaces for typical terminal)
+    (insert "                         ██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+    (insert "                         ██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+    (insert "                         ██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+    (insert "                         ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+    (insert "                          ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+    (insert "                           ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
+    (insert "\n"))
 
   (advice-add 'dashboard-insert-banner :override #'dashboard-insert-custom-banner)
 
