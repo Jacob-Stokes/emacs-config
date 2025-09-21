@@ -440,8 +440,16 @@
                     (insert (propertize (string char) 'face `(:foreground ,color)))))))
             (insert "\n")))
         ;; Add mode indicator at bottom
-        (let ((color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
-              (label (if (string= current-assistant-mode "claude") "[CLAUDE]" "[CODEX]")))
+        (let ((color (cond
+                      ((string= current-assistant-mode "claude") "#48dbfb")
+                      ((string= current-assistant-mode "gpt") "#a29bfe")
+                      ((string= current-assistant-mode "gemini") "#4CAF50")
+                      (t "#888888")))
+              (label (cond
+                      ((string= current-assistant-mode "claude") "[CLAUDE]")
+                      ((string= current-assistant-mode "gpt") "[CODEX]")
+                      ((string= current-assistant-mode "gemini") "[GEMINI]")
+                      (t "[UNKNOWN]"))))
           (insert (propertize label 'face `(:foreground ,color :weight bold)))))
       (read-only-mode 1))))
 
@@ -525,6 +533,7 @@
 (defvar right-pane-window nil "The window containing the right pane terminals")
 (defvar claude-terminal-buffer nil "Buffer for Claude terminal")
 (defvar gpt-terminal-buffer nil "Buffer for GPT terminal")
+(defvar gemini-terminal-buffer nil "Buffer for Gemini terminal")
 (defvar right-pane-header-buffer nil "Buffer for right pane tab header")
 (defvar right-pane-active-terminal "claude" "Currently active terminal in right pane")
 
@@ -545,8 +554,13 @@
       (if (string= right-pane-active-terminal "gpt")
           (insert (propertize "[Codex]" 'face '(:foreground "green" :weight bold :underline t)))
         (insert (propertize " Codex " 'face '(:foreground "gray"))))
+      (insert " ")
+      ;; Gemini tab
+      (if (string= right-pane-active-terminal "gemini")
+          (insert (propertize "[Gemini]" 'face '(:foreground "magenta" :weight bold :underline t)))
+        (insert (propertize " Gemini " 'face '(:foreground "gray"))))
       (insert "  ")
-      (insert (propertize "(C-c c/g)" 'face '(:foreground "dark gray" :height 0.9)))
+      (insert (propertize "(C-c c/g/m)" 'face '(:foreground "dark gray" :height 0.9)))
       (read-only-mode 1))))
 
 ;; Function to switch between terminals in right pane
@@ -568,7 +582,7 @@
                   (setq current-assistant-mode "claude")  ; Update assistant mode
                   (update-right-pane-header)
                   (update-matrix-rain)  ; Update the matrix immediately
-                  (message "Switched to Claude terminal (C-c g for Codex)"))
+                  (message "Switched to Claude terminal (C-c g for Codex, M-3 for Gemini)"))
               (message "Claude terminal not found")))
            ((equal terminal-type "gpt")
             (if (and gpt-terminal-buffer (buffer-live-p gpt-terminal-buffer))
@@ -578,8 +592,18 @@
                   (setq current-assistant-mode "codex")  ; Update assistant mode
                   (update-right-pane-header)
                   (update-matrix-rain)  ; Update the matrix immediately
-                  (message "Switched to Codex terminal (C-c c for Claude)"))
-              (message "Codex terminal not found"))))
+                  (message "Switched to Codex terminal (C-c c for Claude, M-3 for Gemini)"))
+              (message "Codex terminal not found")))
+           ((equal terminal-type "gemini")
+            (if (and gemini-terminal-buffer (buffer-live-p gemini-terminal-buffer))
+                (progn
+                  (switch-to-buffer gemini-terminal-buffer)
+                  (setq right-pane-active-terminal "gemini")
+                  (setq current-assistant-mode "gemini")  ; Update assistant mode
+                  (update-right-pane-header)
+                  (update-matrix-rain)  ; Update the matrix immediately
+                  (message "Switched to Gemini terminal (C-c c for Claude, C-c g for Codex)"))
+              (message "Gemini terminal not found"))))
           ;; Stay in the right pane terminal window (don't return)
           )
       (message "Right pane not found. Run setup-vscode-layout first."))))
@@ -587,6 +611,7 @@
 ;; Create keybindings for quick terminal switching
 (global-set-key (kbd "C-c c") (lambda () (interactive) (switch-right-terminal "claude")))
 (global-set-key (kbd "C-c g") (lambda () (interactive) (switch-right-terminal "gpt")))
+(global-set-key (kbd "C-c j") (lambda () (interactive) (switch-right-terminal "gemini")))
 
 ;; Enable automatic window resizing
 (setq window-combination-resize t)
@@ -672,20 +697,23 @@
       ;; Store this window as the right pane
       (setq right-pane-window (selected-window))
 
-      ;; Create GPT terminal first
+      ;; Create GPT/Codex terminal
       (setq gpt-terminal-buffer (ansi-term "/bin/bash" "gpt-terminal"))
       (with-current-buffer gpt-terminal-buffer
         (sleep-for 0.2)
-        ;; You can replace this with actual GPT/Codex command if you have one
-        (term-send-string (get-buffer-process (current-buffer)) "echo 'GPT Terminal Ready'\n")
-        (term-send-string (get-buffer-process (current-buffer)) "echo 'Install your GPT CLI tool or type: openai api completions.create ...'\n")
-        (term-send-string (get-buffer-process (current-buffer)) "echo 'Press C-c c for Claude, C-c g for GPT'\n"))
+        (term-send-string (get-buffer-process (current-buffer)) "codex\n"))
 
       ;; Now create claude terminal
       (setq claude-terminal-buffer (ansi-term "/bin/bash" "claude-terminal"))
       (with-current-buffer claude-terminal-buffer
         (sleep-for 0.2)
         (term-send-string (get-buffer-process (current-buffer)) "claude\n"))
+
+      ;; Create Gemini terminal
+      (setq gemini-terminal-buffer (ansi-term "/bin/bash" "gemini-terminal"))
+      (with-current-buffer gemini-terminal-buffer
+        (sleep-for 0.2)
+        (term-send-string (get-buffer-process (current-buffer)) "gemini\n"))
 
       ;; Make sure claude is displayed by default
       (set-window-buffer right-pane-window claude-terminal-buffer)
