@@ -24,6 +24,28 @@
 (defvar vibe-panel-header-buffer nil
   "Buffer for panel header tabs.")
 
+;; Panel sorting function
+(defun vibe-sort-panels-with-order (panels order-list)
+  "Sort PANELS using ORDER-LIST, with unlisted panels alphabetical at end."
+  (let ((ordered-panels '())
+        (remaining-panels panels))
+
+    ;; First, add panels in the specified order
+    (dolist (panel-name order-list)
+      (let ((panel-entry (cl-find-if (lambda (p)
+                                       (string= (plist-get (cdr p) :name) panel-name))
+                                     remaining-panels)))
+        (when panel-entry
+          (push panel-entry ordered-panels)
+          (setq remaining-panels (remove panel-entry remaining-panels)))))
+
+    ;; Then add remaining panels alphabetically
+    (let ((sorted-remaining (sort remaining-panels
+                                  (lambda (a b)
+                                    (string< (plist-get (cdr a) :name)
+                                            (plist-get (cdr b) :name))))))
+      (append (reverse ordered-panels) sorted-remaining))))
+
 ;; Auto-discovery functions
 (defun vibe-discover-panels ()
   "Automatically discover all panel modules."
@@ -47,10 +69,20 @@
             (let ((config (symbol-value config-var)))
               (push (cons module-name config) panels))))))
 
-    ;; Sort panels by name for consistent ordering
-    (setq vibe-panels (sort panels (lambda (a b)
-                                     (string< (plist-get (cdr a) :name)
-                                             (plist-get (cdr b) :name)))))
+    ;; Load custom ordering if available
+    (let ((order-list nil))
+      (when (file-exists-p (expand-file-name "order.el" panel-dir))
+        (require 'order)
+        (when (boundp 'vibe-panel-order)
+          (setq order-list vibe-panel-order)))
+
+      ;; Sort panels using custom order, falling back to alphabetical
+      (setq vibe-panels
+            (if order-list
+                (vibe-sort-panels-with-order panels order-list)
+              (sort panels (lambda (a b)
+                             (string< (plist-get (cdr a) :name)
+                                     (plist-get (cdr b) :name)))))))
 
     (message "Discovered %d panels: %s"
              (length vibe-panels)
