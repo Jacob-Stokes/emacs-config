@@ -238,6 +238,47 @@
 ;; Set default directory
 (setq default-directory "/root/")
 
+;; Rainbow animation variables
+(defvar rainbow-colors '("#ff0000" "#ff7f00" "#ffff00" "#00ff00" "#0000ff" "#4b0082" "#9400d3"))
+(defvar rainbow-timer nil)
+(defvar rainbow-index 0)
+
+;; Function to update rainbow colors
+(defun update-rainbow-logo ()
+  "Update the VIBEMACS logo with rainbow effect"
+  (when (get-buffer "*Welcome*")
+    (with-current-buffer "*Welcome*"
+      (when buffer-read-only
+        (read-only-mode -1)
+        (save-excursion
+          (goto-char (point-min))
+          (forward-line 1) ; Skip first empty line
+          (let ((colors (append (nthcdr rainbow-index rainbow-colors)
+                               (cl-subseq rainbow-colors 0 rainbow-index))))
+            ;; Update each line with shifted colors
+            (dotimes (i 6)
+              (let ((line-start (point))
+                    (line-end (progn (end-of-line) (point))))
+                (add-text-properties line-start line-end
+                                   `(face (:foreground ,(nth i colors) :weight bold)))
+                (forward-line 1)))))
+        (read-only-mode 1)))
+    (setq rainbow-index (mod (1+ rainbow-index) (length rainbow-colors)))))
+
+;; Function to start rainbow animation
+(defun start-rainbow-animation ()
+  "Start the rainbow animation for VIBEMACS logo"
+  (when rainbow-timer
+    (cancel-timer rainbow-timer))
+  (setq rainbow-timer (run-at-time "0 sec" 0.15 'update-rainbow-logo)))
+
+;; Function to stop rainbow animation
+(defun stop-rainbow-animation ()
+  "Stop the rainbow animation"
+  (when rainbow-timer
+    (cancel-timer rainbow-timer)
+    (setq rainbow-timer nil)))
+
 ;; Function to create welcome buffer
 (defun create-welcome-buffer ()
   "Create a welcome buffer with instructions"
@@ -245,12 +286,12 @@
     (with-current-buffer buf
       (erase-buffer)
       (insert "\n")
-      (insert (propertize "   ██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n" 'face '(:foreground "#ff00ff")))
-      (insert (propertize "   ██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n" 'face '(:foreground "#ff44ff")))
-      (insert (propertize "   ██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n" 'face '(:foreground "#ff88ff")))
-      (insert (propertize "   ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n" 'face '(:foreground "#ffaaff")))
-      (insert (propertize "    ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n" 'face '(:foreground "#ffccff")))
-      (insert (propertize "     ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n" 'face '(:foreground "#ffeeff")))
+      (insert "   ██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+      (insert "   ██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+      (insert "   ██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+      (insert "   ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+      (insert "    ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+      (insert "     ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
       (insert "\n")
       (insert "  " (propertize "[ Vibes + Emacs = Maximum Flow ]" 'face '(:foreground "cyan" :weight bold)))
       (insert "\n\n")
@@ -376,6 +417,7 @@
   ;; Create main editor window in center
   (other-window 1)
   (switch-to-buffer (create-welcome-buffer))
+  (start-rainbow-animation)  ; Start the rainbow effect
 
   ;; First split vertically for right column (65% editor, 35% right pane)
   (let* ((current-width (window-width))
