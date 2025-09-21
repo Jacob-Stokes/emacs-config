@@ -457,7 +457,8 @@
       ;; Move to main editor window
       (other-window 1)
       (dashboard-refresh-buffer)
-      (vibe-start-animations)  ; Start the animations
+      (start-rainbow-animation)  ; Start the rainbow effect for logo
+      (vibe-start-animations)    ; Start the matrix/aquarium animations
 
       ;; First split vertically for right column (65% editor, 35% right pane)
       ;; Use negative value to make it proportional
