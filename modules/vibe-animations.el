@@ -62,30 +62,39 @@
 ;; Master animation control functions
 (defun switch-animation-mode ()
   "Switch to the next animation mode"
+  (interactive)
+  ;; Ensure we have animation modes loaded
+  (when (zerop (length animation-modes))
+    (vibe-discover-animations))
+
   ;; Stop current animation
-  (cond
-   ((string= current-animation-mode "matrix")
-    (stop-matrix-rain-animation))
-   ((string= current-animation-mode "aquarium")
-    (stop-aquarium-animation))
-   ((string= current-animation-mode "starfield")
-    (stop-starfield-animation)))
+  (condition-case err
+      (cond
+       ((string= current-animation-mode "matrix")
+        (stop-matrix-rain-animation))
+       ((string= current-animation-mode "aquarium")
+        (stop-aquarium-animation))
+       ((string= current-animation-mode "starfield")
+        (stop-starfield-animation)))
+    (error (message "Error stopping animation: %s" err)))
 
   ;; Move to next mode
   (let ((current-index (cl-position current-animation-mode animation-modes :test 'string=)))
     (setq current-animation-mode
-          (nth (% (1+ current-index) (length animation-modes)) animation-modes)))
+          (nth (% (1+ (or current-index 0)) (length animation-modes)) animation-modes)))
 
   ;; Start new animation
-  (cond
-   ((string= current-animation-mode "matrix")
-    (create-matrix-rain-buffer)
-    (init-matrix-rain)
-    (start-matrix-rain-animation))
-   ((string= current-animation-mode "aquarium")
-    (start-aquarium-animation))
-   ((string= current-animation-mode "starfield")
-    (start-starfield-animation)))
+  (condition-case err
+      (cond
+       ((string= current-animation-mode "matrix")
+        (create-matrix-rain-buffer)
+        (init-matrix-rain)
+        (start-matrix-rain-animation))
+       ((string= current-animation-mode "aquarium")
+        (start-aquarium-animation))
+       ((string= current-animation-mode "starfield")
+        (start-starfield-animation)))
+    (error (message "Error starting animation: %s" err)))
 
   (message "Switched to %s animation" current-animation-mode))
 
@@ -108,9 +117,16 @@
 (defun vibe-start-animations ()
   "Start the default animation system"
   (interactive)
-  (create-matrix-rain-buffer)
-  (init-matrix-rain)
-  (start-matrix-rain-animation)
+  ;; Start the current animation mode
+  (cond
+   ((string= current-animation-mode "matrix")
+    (create-matrix-rain-buffer)
+    (init-matrix-rain)
+    (start-matrix-rain-animation))
+   ((string= current-animation-mode "aquarium")
+    (start-aquarium-animation))
+   ((string= current-animation-mode "starfield")
+    (start-starfield-animation)))
   (start-animation-switcher))
 
 (defun vibe-stop-animations ()
