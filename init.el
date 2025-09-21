@@ -365,8 +365,9 @@
   (other-window 1)  ; This should go to middle window
 
   ;; Now split the middle window for bottom terminal
-  (let ((height (window-height)))
-    (split-window-vertically (- height (/ height 3))))  ; Split at 2/3 point
+  (let* ((height (window-height))
+         (editor-height (floor (* height 0.8))))  ; 80% for editor, 20% for terminal
+    (split-window-vertically editor-height))
 
   (other-window 1)
   ;; Open standard terminal at bottom middle
