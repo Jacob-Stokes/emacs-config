@@ -14,6 +14,16 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+(defgroup my/vscode-emacs nil
+  "VS Code-like layout helpers."
+  :group 'convenience
+  :prefix "my/")
+
+(defcustom my/setup-vscode-layout-on-startup t
+  "When non-nil, run `setup-vscode-layout` automatically after startup in GUI sessions."
+  :type 'boolean
+  :group 'my/vscode-emacs)
+
 ;; Disable startup messages
 (setq inhibit-startup-message t)
 (setq inhibit-startup-echo-area-message t)
@@ -128,9 +138,32 @@
 
 ;; We'll use built-in ansi-term instead of vterm for better compatibility
 
-;; Line numbers
-(global-display-line-numbers-mode t)
+;; Line numbers - only for programming/text modes
 (setq display-line-numbers-type 'relative)
+
+;; Hook to enable line numbers only in programming and text modes
+(add-hook 'prog-mode-hook 'display-line-numbers-mode)
+(add-hook 'text-mode-hook 'display-line-numbers-mode)
+(add-hook 'conf-mode-hook 'display-line-numbers-mode)
+
+;; Disable line numbers in specific modes
+(add-hook 'treemacs-mode-hook (lambda () (display-line-numbers-mode -1)))
+(add-hook 'term-mode-hook (lambda ()
+            (display-line-numbers-mode -1)
+            (setq-local left-margin-width 2)
+            (set-window-buffer (selected-window) (current-buffer))))
+(add-hook 'ansi-term-mode-hook (lambda ()
+            (display-line-numbers-mode -1)
+            (setq-local left-margin-width 2)
+            (set-window-buffer (selected-window) (current-buffer))))
+(add-hook 'eshell-mode-hook (lambda ()
+            (display-line-numbers-mode -1)
+            (setq-local left-margin-width 2)
+            (set-window-buffer (selected-window) (current-buffer))))
+(add-hook 'shell-mode-hook (lambda ()
+            (display-line-numbers-mode -1)
+            (setq-local left-margin-width 2)
+            (set-window-buffer (selected-window) (current-buffer))))
 
 ;; Highlight current line
 (global-hl-line-mode 1)
@@ -193,6 +226,7 @@
       (insert "    C-c c       Switch right pane to Claude terminal\n")
       (insert "    C-c g       Switch right pane to GPT terminal\n")
       (goto-char (point-min))  ; Move cursor to beginning of buffer
+      (display-line-numbers-mode -1)  ; Disable line numbers in welcome buffer
       (read-only-mode 1))
     buf))
 
@@ -291,21 +325,11 @@
   ;; Focus back on top middle editor window
   (other-window -1))
 
-;; Auto-install packages on first run
-(defun ensure-packages-installed ()
-  "Auto-install packages if not present"
-  (unless (package-installed-p 'treemacs)
-    (package-refresh-contents)
-    (package-install 'use-package)
-    (message "Installing packages... Please restart Emacs after installation completes.")))
-
-;; Run package installation check
-(ensure-packages-installed)
-
 ;; Setup layout on startup (with delay for package installation)
 (add-hook 'emacs-startup-hook
           (lambda ()
-            (run-at-time "2 sec" nil 'setup-vscode-layout)))
+            (when my/setup-vscode-layout-on-startup
+              (run-at-time "2 sec" nil #'setup-vscode-layout))))
 
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
@@ -315,4 +339,5 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+ '(package-selected-packages
+   '(which-key company projectile treemacs-projectile treemacs all-the-icons doom-modeline)))
