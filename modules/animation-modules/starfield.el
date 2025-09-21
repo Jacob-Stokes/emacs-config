@@ -21,8 +21,8 @@
   ;; Get actual window dimensions if buffer is displayed
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (- (window-width win) 2))
-      (setq matrix-height (- (window-height win) 1))))
+      (setq matrix-width (max 20 (- (window-width win) 2)))    ; Minimum 20 width
+      (setq matrix-height (max 10 (- (window-height win) 1))))) ; Minimum 10 height
 
   ;; Create stars at random positions
   (setq starfield-stars '())
@@ -43,11 +43,18 @@
         (when was-readonly (read-only-mode -1))
         (erase-buffer)
 
-        ;; Create empty grid
+        ;; Ensure proper window sizing
+        (let ((win (get-buffer-window matrix-rain-buffer)))
+          (when win
+            (setq matrix-width (- (window-width win) 2))
+            (setq matrix-height (- (window-height win) 1))))
+
+        ;; Create empty grid with exact dimensions
         (dotimes (row matrix-height)
           (dotimes (col matrix-width)
             (insert " "))
-          (insert "\n"))
+          (when (< row (1- matrix-height))  ; Don't add newline on last row
+            (insert "\n")))
 
         ;; Move and draw stars
         (dolist (star starfield-stars)
