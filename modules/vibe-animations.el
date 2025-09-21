@@ -106,6 +106,7 @@
   "Start automatic animation switching"
   (when animation-switch-timer
     (cancel-timer animation-switch-timer))
+  ;; Start with a delay to let the initial animation settle
   (setq animation-switch-timer
         (run-at-time animation-switch-interval
                      animation-switch-interval

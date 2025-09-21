@@ -500,13 +500,11 @@
       ;; Open standard terminal at bottom left
       (ansi-term "/bin/bash" "bottom-terminal")
 
-      ;; Move to bottom right for matrix rain
+      ;; Move to bottom right for animation display
       (other-window 1)
-      (create-matrix-rain-buffer)
-      (switch-to-buffer matrix-rain-buffer)
-      (init-matrix-rain)  ; Initialize after window is created
-      (start-matrix-rain-animation)
-      (start-animation-switcher)  ; Start automatic animation switching
+      ;; Animation already started by vibe-start-animations above
+      (when (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
+        (switch-to-buffer matrix-rain-buffer))
       (set-window-dedicated-p (selected-window) t)
       (set-window-parameter (selected-window) 'no-other-window t)
 
