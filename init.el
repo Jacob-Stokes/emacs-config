@@ -217,19 +217,15 @@
   ;; Override the banner with our VIBEMACS logo
   (defun dashboard-insert-custom-banner ()
     "Insert our custom VIBEMACS banner with rainbow effect"
-    (let* ((logo-width 68)  ; Actual width of the VIBEMACS logo
-           (window-width (window-width))
-           (padding (max 0 (/ (- window-width logo-width) 2)))
-           (pad-str (make-string padding ?\s)))
-      (insert "\n")
-      ;; Insert each line with calculated padding
-      (insert pad-str "██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
-      (insert pad-str "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
-      (insert pad-str "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
-      (insert pad-str "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
-      (insert pad-str " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
-      (insert pad-str "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
-      (insert "\n")))
+    (insert "\n")
+    ;; No padding, left aligned
+    (insert "██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+    (insert "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+    (insert "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+    (insert "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+    (insert " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+    (insert "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
+    (insert "\n"))
 
   (advice-add 'dashboard-insert-banner :override #'dashboard-insert-custom-banner)
 
