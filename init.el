@@ -462,7 +462,7 @@
   "Reset the VS Code layout maintaining existing buffers"
   (interactive)
   ;; Store current buffers if they exist
-  (let ((has-treemacs (treemacs-get-local-window))
+  (let ((has-treemacs (get-buffer-window "*treemacs*"))
         (current-buffer (current-buffer)))
     ;; Start fresh
     (delete-other-windows)
@@ -472,7 +472,7 @@
       (treemacs))
 
     ;; If treemacs wasn't open but we want it
-    (unless (treemacs-get-local-window)
+    (unless (get-buffer-window "*treemacs*")
       (treemacs))
 
     ;; Go to main window
@@ -507,7 +507,7 @@
       (delete-other-windows)
 
       ;; Open treemacs on the left (only if not already visible)
-      (unless (treemacs-get-local-window)
+      (unless (get-buffer-window "*treemacs*")
         (treemacs))
 
       ;; Create main editor window in center
