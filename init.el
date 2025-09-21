@@ -316,9 +316,9 @@
   (other-window 1)
   (switch-to-buffer (create-welcome-buffer))
 
-  ;; First split vertically for right column (70% editor, 30% right pane)
+  ;; First split vertically for right column (65% editor, 35% right pane)
   (let* ((current-width (window-width))
-         (editor-width (floor (* current-width 0.7))))
+         (editor-width (floor (* current-width 0.65))))
     (split-window-horizontally editor-width))
   (other-window 1)
 
