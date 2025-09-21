@@ -321,10 +321,14 @@
   (setq right-pane-header-buffer (get-buffer-create "*Right Pane Tabs*"))
   (with-current-buffer right-pane-header-buffer
     (display-line-numbers-mode -1)
-    (setq mode-line-format nil))  ; Hide modeline for header
+    (setq mode-line-format nil)  ; Hide modeline for header
+    (setq window-size-fixed t))  ; Prevent resizing
 
   ;; Display header at top of right pane
   (switch-to-buffer right-pane-header-buffer)
+  (let ((header-window (selected-window)))
+    (set-window-dedicated-p header-window t)  ; Dedicate window to this buffer
+    (set-window-parameter header-window 'no-other-window t))  ; Skip in window cycling
   (split-window-vertically 2)  ; Small window for header
   (other-window 1)
 
