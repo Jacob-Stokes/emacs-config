@@ -69,14 +69,12 @@
 
   ;; Stop current animation
   (condition-case err
-      (cond
-       ((string= current-animation-mode "matrix")
-        (stop-matrix-rain-animation))
-       ((string= current-animation-mode "aquarium")
-        (stop-aquarium-animation))
-       ((string= current-animation-mode "starfield")
-        (stop-starfield-animation)))
-    (error (message "Error stopping animation: %s" err)))
+      (progn
+        ;; Stop all animations first to avoid conflicts
+        (stop-matrix-rain-animation)
+        (stop-aquarium-animation)
+        (stop-starfield-animation))
+    (error (message "Error stopping animations: %s" err)))
 
   ;; Move to next mode
   (let ((current-index (cl-position current-animation-mode animation-modes :test 'string=)))
