@@ -291,8 +291,8 @@
                   (update-right-pane-header)
                   (message "Switched to Codex terminal (C-c c for Claude)"))
               (message "Codex terminal not found"))))
-          ;; Return to original window
-          (select-window current-window))
+          ;; Stay in the right pane terminal window (don't return)
+          )
       (message "Right pane not found. Run setup-vscode-layout first."))))
 
 ;; Create keybindings for quick terminal switching
