@@ -301,12 +301,13 @@
 (defvar rainbow-timer nil)
 (defvar rainbow-index 0)
 
-;; ASCII face animation variables
-(defvar claude-faces '("( ͡° ͜ʖ ͡°)" "¯\\_(ツ)_/¯" "(づ｡◕‿‿◕｡)づ" "ᕕ( ᐛ )ᕗ" "( ͡~ ͜ʖ ͡°)" "(☞ﾟヮﾟ)☞" "༼ つ ◕_◕ ༽つ" "(◕‿◕)" "ʕ•ᴥ•ʔ" "(｡◕‿◕｡)"))
-(defvar codex-faces '("[̲̅$̲̅(̲̅ιοο̲̅)̲̅$̲̅]" "ಠ_ಠ" "(╯°□°）╯" "┬──┬ ノ( ゜-゜ノ)" "(ノಠ益ಠ)ノ" "¯\\_(⊙︿⊙)_/¯" "ლ(ಠ益ಠლ)" "(╯°□°）╯︵ ┻━┻" "┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻" "(ಥ﹏ಥ)"))
-(defvar ascii-face-index 0)
-(defvar ascii-face-timer nil)
-(defvar ascii-face-buffer nil)
+;; Matrix rain animation variables
+(defvar matrix-rain-timer nil)
+(defvar matrix-rain-buffer nil)
+(defvar matrix-columns nil)
+(defvar matrix-chars "01ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜﾝ")
+(defvar matrix-width 20)  ; Width of the matrix display
+(defvar matrix-height 10) ; Height of the matrix display
 (defvar current-assistant-mode "claude")  ; Track which assistant is active
 
 ;; Function to update rainbow colors - works with both Welcome and Dashboard
@@ -348,58 +349,98 @@
     (cancel-timer rainbow-timer)
     (setq rainbow-timer nil)))
 
-;; Function to create ASCII face buffer
-(defun create-ascii-face-buffer ()
-  "Create buffer with blinking ASCII face"
-  (setq ascii-face-buffer (get-buffer-create "*ASCII Face*"))
-  (with-current-buffer ascii-face-buffer
+;; Function to initialize matrix rain
+(defun init-matrix-rain ()
+  "Initialize the matrix rain columns"
+  (setq matrix-columns (make-vector matrix-width nil))
+  (dotimes (i matrix-width)
+    (aset matrix-columns i (cons (random matrix-height) (random 256)))))
+
+;; Function to create matrix rain buffer
+(defun create-matrix-rain-buffer ()
+  "Create buffer with matrix rain effect"
+  (setq matrix-rain-buffer (get-buffer-create "*Matrix Rain*"))
+  (with-current-buffer matrix-rain-buffer
     (erase-buffer)
     (display-line-numbers-mode -1)  ; No line numbers
-    (let* ((faces (if (string= current-assistant-mode "claude") claude-faces codex-faces))
-           (face (nth ascii-face-index faces))
-           (color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
-           (label (if (string= current-assistant-mode "claude") "Claude" "Codex")))
-      (insert "\n\n  ")
-      (insert (propertize face 'face `(:foreground ,color :weight bold :height 3.0)))
-      (insert "\n\n  ")
-      (insert (propertize label 'face `(:foreground ,color :height 1.2)))
-      (insert " vibing..."))
+    (setq cursor-type nil)  ; Hide cursor
+    (init-matrix-rain)
     (read-only-mode 1)))
 
-;; Function to update ASCII face
-(defun update-ascii-face ()
-  "Update the ASCII face animation"
-  (when (and ascii-face-buffer (buffer-live-p ascii-face-buffer))
-    (with-current-buffer ascii-face-buffer
+;; Function to update matrix rain
+(defun update-matrix-rain ()
+  "Update the matrix rain animation"
+  (when (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
+    (with-current-buffer matrix-rain-buffer
       (read-only-mode -1)
       (erase-buffer)
-      (let* ((faces (if (string= current-assistant-mode "claude") claude-faces codex-faces))
-             (face (nth ascii-face-index faces))
-             (color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
-             (label (if (string= current-assistant-mode "claude") "Claude" "Codex")))
-        (insert "\n\n  ")
-        (insert (propertize face 'face `(:foreground ,color :weight bold :height 2.0)))
-        (insert "\n\n  ")
-        (insert (propertize label 'face `(:foreground ,color :height 1.2)))
-        (insert " vibing..."))
-      (read-only-mode 1))
-    (setq ascii-face-index (mod (1+ ascii-face-index)
-                                (length (if (string= current-assistant-mode "claude")
-                                           claude-faces codex-faces))))))
+      ;; Create the matrix display
+      (let ((display (make-vector matrix-height nil)))
+        ;; Initialize empty lines
+        (dotimes (y matrix-height)
+          (aset display y (make-string matrix-width ? )))
+        ;; Draw the matrix columns
+        (dotimes (x matrix-width)
+          (let* ((col-data (aref matrix-columns x))
+                 (y (car col-data))
+                 (intensity (cdr col-data)))
+            ;; Draw character if within bounds
+            (when (and (>= y 0) (< y matrix-height))
+              (let* ((line (aref display y))
+                     (char (aref matrix-chars (random (length matrix-chars))))
+                     (color (cond
+                            ((> intensity 200) "#00ff00")  ; Bright green
+                            ((> intensity 150) "#00cc00")  ; Medium green
+                            ((> intensity 100) "#009900")  ; Dark green
+                            (t "#006600"))))              ; Very dark green
+                (aset line x char)
+                ;; Store the colored line back
+                (aset display y line)))
+            ;; Update column position and intensity
+            (setcar col-data (if (>= y matrix-height)
+                                (- (random 5) 10)  ; Reset to above screen
+                              (1+ y)))  ; Move down
+            (setcdr col-data (max 0 (- intensity 15)))))  ; Fade
+        ;; Randomly boost some columns
+        (when (< (random 100) 30)
+          (let ((boost-col (random matrix-width)))
+            (setcdr (aref matrix-columns boost-col) 255)))
+        ;; Display the matrix
+        (dotimes (y matrix-height)
+          (let ((line (aref display y)))
+            (dotimes (x matrix-width)
+              (let* ((char (aref line x))
+                     (col-data (aref matrix-columns x))
+                     (col-y (car col-data))
+                     (intensity (cdr col-data)))
+                (if (= char ? )
+                    (insert " ")
+                  (let ((color (cond
+                               ((= y col-y) "#00ff00")      ; Leading edge - bright
+                               ((= y (1- col-y)) "#00cc00")  ; Second - medium
+                               ((< y col-y) "#006600")       ; Trail - dark
+                               (t "#004400"))))              ; Very dark
+                    (insert (propertize (string char) 'face `(:foreground ,color)))))))
+            (insert "\n")))
+        ;; Add mode indicator at bottom
+        (let ((color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
+              (label (if (string= current-assistant-mode "claude") "[CLAUDE]" "[CODEX]")))
+          (insert (propertize label 'face `(:foreground ,color :weight bold)))))
+      (read-only-mode 1))))
 
-;; Function to start ASCII face animation
-(defun start-ascii-face-animation ()
-  "Start the ASCII face blinking animation"
-  (when ascii-face-timer
-    (cancel-timer ascii-face-timer))
-  (setq ascii-face-timer (run-at-time "0 sec" 2.0 'update-ascii-face)))
+;; Function to start matrix rain animation
+(defun start-matrix-rain-animation ()
+  "Start the matrix rain animation"
+  (when matrix-rain-timer
+    (cancel-timer matrix-rain-timer))
+  (setq matrix-rain-timer (run-at-time "0 sec" 0.1 'update-matrix-rain)))
 
-;; Function to stop ASCII face animation
-(defun stop-ascii-face-animation ()
-  "Stop the ASCII face animation"
-  (when ascii-face-timer
-    (cancel-timer ascii-face-timer)
-    (setq ascii-face-timer nil)))
+;; Function to stop matrix rain animation
+(defun stop-matrix-rain-animation ()
+  "Stop the matrix rain animation"
+  (when matrix-rain-timer
+    (cancel-timer matrix-rain-timer)
+    (setq matrix-rain-timer nil)))
 
 ;; Function to create welcome buffer
 (defun create-welcome-buffer ()
@@ -509,7 +550,7 @@
                   (setq right-pane-active-terminal "claude")
                   (setq current-assistant-mode "claude")  ; Update assistant mode
                   (update-right-pane-header)
-                  (update-ascii-face)  ; Update the face immediately
+                  (update-matrix-rain)  ; Update the matrix immediately
                   (message "Switched to Claude terminal (C-c g for Codex)"))
               (message "Claude terminal not found")))
            ((equal terminal-type "gpt")
@@ -519,7 +560,7 @@
                   (setq right-pane-active-terminal "gpt")
                   (setq current-assistant-mode "codex")  ; Update assistant mode
                   (update-right-pane-header)
-                  (update-ascii-face)  ; Update the face immediately
+                  (update-matrix-rain)  ; Update the matrix immediately
                   (message "Switched to Codex terminal (C-c c for Claude)"))
               (message "Codex terminal not found"))))
           ;; Stay in the right pane terminal window (don't return)
