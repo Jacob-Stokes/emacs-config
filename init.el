@@ -240,6 +240,29 @@
 (defvar right-pane-window nil "The window containing the right pane terminals")
 (defvar claude-terminal-buffer nil "Buffer for Claude terminal")
 (defvar gpt-terminal-buffer nil "Buffer for GPT terminal")
+(defvar right-pane-header-buffer nil "Buffer for right pane tab header")
+(defvar right-pane-active-terminal "claude" "Currently active terminal in right pane")
+
+;; Function to create/update right pane header
+(defun update-right-pane-header ()
+  "Update the right pane header to show active tab"
+  (when (and right-pane-header-buffer (buffer-live-p right-pane-header-buffer))
+    (with-current-buffer right-pane-header-buffer
+      (read-only-mode -1)
+      (erase-buffer)
+      (insert " ")
+      ;; Claude tab
+      (if (string= right-pane-active-terminal "claude")
+          (insert (propertize "[Claude]" 'face '(:foreground "cyan" :weight bold :underline t)))
+        (insert (propertize " Claude " 'face '(:foreground "gray"))))
+      (insert " ")
+      ;; GPT/Codex tab
+      (if (string= right-pane-active-terminal "gpt")
+          (insert (propertize "[Codex]" 'face '(:foreground "green" :weight bold :underline t)))
+        (insert (propertize " Codex " 'face '(:foreground "gray"))))
+      (insert "  ")
+      (insert (propertize "(C-c c/g)" 'face '(:foreground "dark gray" :height 0.9)))
+      (read-only-mode 1))))
 
 ;; Function to switch between terminals in right pane
 (defun switch-right-terminal (terminal-type)
@@ -256,14 +279,18 @@
             (if (and claude-terminal-buffer (buffer-live-p claude-terminal-buffer))
                 (progn
                   (switch-to-buffer claude-terminal-buffer)
-                  (message "Switched to Claude terminal (C-c g for GPT)"))
+                  (setq right-pane-active-terminal "claude")
+                  (update-right-pane-header)
+                  (message "Switched to Claude terminal (C-c g for Codex)"))
               (message "Claude terminal not found")))
            ((equal terminal-type "gpt")
             (if (and gpt-terminal-buffer (buffer-live-p gpt-terminal-buffer))
                 (progn
                   (switch-to-buffer gpt-terminal-buffer)
-                  (message "Switched to GPT terminal (C-c c for Claude)"))
-              (message "GPT terminal not found"))))
+                  (setq right-pane-active-terminal "gpt")
+                  (update-right-pane-header)
+                  (message "Switched to Codex terminal (C-c c for Claude)"))
+              (message "Codex terminal not found"))))
           ;; Return to original window
           (select-window current-window))
       (message "Right pane not found. Run setup-vscode-layout first."))))
@@ -290,6 +317,17 @@
   (split-window-horizontally)
   (other-window 1)
 
+  ;; Create header buffer for right pane
+  (setq right-pane-header-buffer (get-buffer-create "*Right Pane Tabs*"))
+  (with-current-buffer right-pane-header-buffer
+    (display-line-numbers-mode -1)
+    (setq mode-line-format nil))  ; Hide modeline for header
+
+  ;; Display header at top of right pane
+  (switch-to-buffer right-pane-header-buffer)
+  (split-window-vertically 2)  ; Small window for header
+  (other-window 1)
+
   ;; Store this window as the right pane
   (setq right-pane-window (selected-window))
 
@@ -310,9 +348,11 @@
 
   ;; Make sure claude is displayed by default
   (set-window-buffer right-pane-window claude-terminal-buffer)
+  (setq right-pane-active-terminal "claude")
+  (update-right-pane-header)
 
-  ;; Go back to middle window
-  (other-window -1)
+  ;; Go back to middle window (skip header window)
+  (other-window -2)
 
   ;; Now split the middle window for bottom terminal
   (let ((height (window-height)))
