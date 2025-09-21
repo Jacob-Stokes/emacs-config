@@ -139,6 +139,51 @@
   :config
   (setq which-key-idle-delay 0.5))
 
+;; VIBE FEATURES
+
+;; Beacon - Flash cursor when switching windows
+(use-package beacon
+  :config
+  (beacon-mode 1)
+  (setq beacon-color "#00ff00"
+        beacon-blink-duration 0.3
+        beacon-blink-delay 0.1
+        beacon-size 20))
+
+;; Rainbow-mode - Colorize color codes
+(use-package rainbow-mode
+  :hook (prog-mode . rainbow-mode))
+
+;; Highlight indent guides - Visual indent lines
+(use-package highlight-indent-guides
+  :hook (prog-mode . highlight-indent-guides-mode)
+  :config
+  (setq highlight-indent-guides-method 'character
+        highlight-indent-guides-character ?\│
+        highlight-indent-guides-responsive 'top))
+
+;; Nyan Mode - Nyan cat progress in modeline
+(use-package nyan-mode
+  :config
+  (nyan-mode 1)
+  (setq nyan-wavy-trail t
+        nyan-animation-frame-interval 0.1))
+
+;; Rainbow delimiters - Colorful parentheses
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+;; Fireplace - Cozy fireplace
+(use-package fireplace
+  :commands fireplace)
+
+;; Imenu-list - Better than minimap for terminal (shows function list)
+(use-package imenu-list
+  :commands imenu-list-smart-toggle
+  :config
+  (setq imenu-list-focus-after-activation t
+        imenu-list-size 30))
+
 ;; We'll use built-in ansi-term instead of vterm for better compatibility
 
 ;; Line numbers - only for programming/text modes
@@ -227,7 +272,13 @@
       (insert "    Type 'claude' in terminal to start Claude\n")
       (insert "    C-c C-t     New terminal in split\n")
       (insert "    C-c c       Switch right pane to Claude terminal\n")
-      (insert "    C-c g       Switch right pane to GPT terminal\n")
+      (insert "    C-c g       Switch right pane to GPT terminal\n\n")
+      (insert "  Vibe Features:\n")
+      (insert "  ─────────────────────────────────────────────────────────────\n")
+      (insert "    M-x fireplace        Start cozy fireplace\n")
+      (insert "    M-x imenu-list       Toggle function outline\n")
+      (insert "    🌈 Colors auto-preview in code\n")
+      (insert "    🐱 Nyan cat in modeline shows position\n")
       (goto-char (point-min))  ; Move cursor to beginning of buffer
       (display-line-numbers-mode -1)  ; Disable line numbers in welcome buffer
       (read-only-mode 1))
