@@ -352,6 +352,11 @@
 ;; Function to initialize matrix rain
 (defun init-matrix-rain ()
   "Initialize the matrix rain columns"
+  ;; Get actual window dimensions
+  (let ((win (get-buffer-window matrix-rain-buffer)))
+    (when win
+      (setq matrix-width (window-width win))
+      (setq matrix-height (window-height win))))
   (setq matrix-columns (make-vector matrix-width nil))
   (dotimes (i matrix-width)
     (aset matrix-columns i (cons (random matrix-height) (random 256)))))
@@ -364,7 +369,9 @@
     (erase-buffer)
     (display-line-numbers-mode -1)  ; No line numbers
     (setq cursor-type nil)  ; Hide cursor
-    (init-matrix-rain)
+    ;; Initialize with default size, will be updated when displayed
+    (setq matrix-width 40)
+    (setq matrix-height 15)
     (read-only-mode 1)))
 
 ;; Function to update matrix rain
@@ -372,6 +379,16 @@
   "Update the matrix rain animation"
   (when (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
     (with-current-buffer matrix-rain-buffer
+      ;; Update dimensions if window size changed
+      (let ((win (get-buffer-window matrix-rain-buffer)))
+        (when win
+          (let ((new-width (window-width win))
+                (new-height (1- (window-height win))))  ; -1 for mode line
+            (when (or (/= new-width matrix-width)
+                      (/= new-height matrix-height))
+              (setq matrix-width new-width)
+              (setq matrix-height new-height)
+              (init-matrix-rain)))))
       (read-only-mode -1)
       (erase-buffer)
       ;; Create the matrix display
@@ -696,6 +713,7 @@
       (other-window 1)
       (create-matrix-rain-buffer)
       (switch-to-buffer matrix-rain-buffer)
+      (init-matrix-rain)  ; Initialize after window is created
       (start-matrix-rain-animation)
       (set-window-dedicated-p (selected-window) t)
       (set-window-parameter (selected-window) 'no-other-window t)
