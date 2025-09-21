@@ -91,8 +91,11 @@
           treemacs-show-hidden-files t
           treemacs-git-mode 'simple
           treemacs-follow-mode t
-          treemacs-filewatch-mode t)
-    (treemacs-resize-icons 18)
+          treemacs-filewatch-mode t
+          treemacs-no-png-images t)  ; Use text icons in terminal
+    ;; Suppress image resize warnings in terminal
+    (advice-add 'treemacs--should-use-png-icons
+                :override (lambda () nil))
     ;; Make treemacs background transparent too
     (set-face-background 'treemacs-root-face "unspecified-bg")
     (set-face-background 'treemacs-file-face "unspecified-bg")
