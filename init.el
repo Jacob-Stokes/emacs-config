@@ -296,6 +296,12 @@
 (defvar rainbow-timer nil)
 (defvar rainbow-index 0)
 
+;; ASCII face animation variables
+(defvar ascii-faces '("(◕‿◕)" "(◔‿◔)" "(◉‿◉)" "(⊙‿⊙)" "(◕‿◕)" "(◔‿◔)"))
+(defvar ascii-face-index 0)
+(defvar ascii-face-timer nil)
+(defvar ascii-face-buffer nil)
+
 ;; Function to update rainbow colors - works with both Welcome and Dashboard
 (defun update-rainbow-logo ()
   "Update the VIBEMACS logo with rainbow effect"
@@ -334,6 +340,48 @@
   (when rainbow-timer
     (cancel-timer rainbow-timer)
     (setq rainbow-timer nil)))
+
+;; Function to create ASCII face buffer
+(defun create-ascii-face-buffer ()
+  "Create buffer with blinking ASCII face"
+  (setq ascii-face-buffer (get-buffer-create "*ASCII Face*"))
+  (with-current-buffer ascii-face-buffer
+    (erase-buffer)
+    (setq mode-line-format nil)  ; Hide modeline
+    (display-line-numbers-mode -1)  ; No line numbers
+    (insert "\n  ")
+    (insert (propertize (nth ascii-face-index ascii-faces)
+                       'face '(:foreground "cyan" :weight bold :height 1.5)))
+    (insert "\n  vibing...")
+    (read-only-mode 1)))
+
+;; Function to update ASCII face
+(defun update-ascii-face ()
+  "Update the ASCII face animation"
+  (when (and ascii-face-buffer (buffer-live-p ascii-face-buffer))
+    (with-current-buffer ascii-face-buffer
+      (read-only-mode -1)
+      (erase-buffer)
+      (insert "\n  ")
+      (insert (propertize (nth ascii-face-index ascii-faces)
+                         'face '(:foreground "cyan" :weight bold :height 1.5)))
+      (insert "\n  vibing...")
+      (read-only-mode 1))
+    (setq ascii-face-index (mod (1+ ascii-face-index) (length ascii-faces)))))
+
+;; Function to start ASCII face animation
+(defun start-ascii-face-animation ()
+  "Start the ASCII face blinking animation"
+  (when ascii-face-timer
+    (cancel-timer ascii-face-timer))
+  (setq ascii-face-timer (run-at-time "0 sec" 0.5 'update-ascii-face)))
+
+;; Function to stop ASCII face animation
+(defun stop-ascii-face-animation ()
+  "Stop the ASCII face animation"
+  (when ascii-face-timer
+    (cancel-timer ascii-face-timer)
+    (setq ascii-face-timer nil)))
 
 ;; Function to create welcome buffer
 (defun create-welcome-buffer ()
@@ -481,6 +529,21 @@
     (unless (get-buffer-window "*treemacs*")
       (treemacs))
 
+    ;; Add ASCII face below treemacs
+    (let* ((treemacs-win (selected-window))
+           (height (window-height))
+           (treemacs-height (floor (* height 0.8))))
+      (split-window-vertically treemacs-height)
+      (other-window 1)
+      (if (and ascii-face-buffer (buffer-live-p ascii-face-buffer))
+          (switch-to-buffer ascii-face-buffer)
+        (progn
+          (create-ascii-face-buffer)
+          (switch-to-buffer ascii-face-buffer)
+          (start-ascii-face-animation)))
+      (set-window-dedicated-p (selected-window) t)
+      (set-window-parameter (selected-window) 'no-other-window t))
+
     ;; Go to main window
     (other-window 1)
 
@@ -516,7 +579,21 @@
       (unless (get-buffer-window "*treemacs*")
         (treemacs))
 
-      ;; Create main editor window in center
+      ;; Split treemacs vertically for ASCII face (80% treemacs, 20% face)
+      (let* ((treemacs-win (selected-window))
+             (height (window-height))
+             (treemacs-height (floor (* height 0.8))))
+        (split-window-vertically treemacs-height)
+        (other-window 1)
+        ;; Show ASCII face buffer
+        (create-ascii-face-buffer)
+        (switch-to-buffer ascii-face-buffer)
+        (start-ascii-face-animation)
+        ;; Make this window dedicated
+        (set-window-dedicated-p (selected-window) t)
+        (set-window-parameter (selected-window) 'no-other-window t))
+
+      ;; Move to main editor window (skip the ASCII face window)
       (other-window 1)
       (dashboard-refresh-buffer)
       (start-rainbow-animation)  ; Start the rainbow effect
