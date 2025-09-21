@@ -61,11 +61,15 @@
 
 ;; Custom face colors for better visibility on transparent background
 (custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(default ((t (:foreground "#E0E0E0"))))
  '(font-lock-comment-face ((t (:foreground "#75715e"))))
+ '(font-lock-function-name-face ((t (:foreground "#fd971f"))))
  '(font-lock-keyword-face ((t (:foreground "#66d9ef"))))
  '(font-lock-string-face ((t (:foreground "#a6e22e"))))
- '(font-lock-function-name-face ((t (:foreground "#fd971f"))))
  '(hl-line ((t (:background "unspecified" :underline t)))))
 
 ;; Modeline (status bar)
@@ -436,10 +440,11 @@
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
 (global-set-key (kbd "C-c t") (lambda () (interactive) (ansi-term "/bin/bash")))
+(global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
+(global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(which-key company projectile treemacs-projectile treemacs all-the-icons doom-modeline)))
+ '(package-selected-packages nil))
