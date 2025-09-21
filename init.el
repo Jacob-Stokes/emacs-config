@@ -624,7 +624,7 @@
       (setq claude-terminal-buffer (ansi-term "/bin/bash" "claude-terminal"))
       (with-current-buffer claude-terminal-buffer
         (sleep-for 0.2)
-        (term-send-string (get-buffer-process (current-buffer)) "claude --dangerously-skip-permissions\n"))
+        (term-send-string (get-buffer-process (current-buffer)) "claude\n"))
 
       ;; Make sure claude is displayed by default
       (set-window-buffer right-pane-window claude-terminal-buffer)
