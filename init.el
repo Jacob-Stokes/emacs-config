@@ -297,8 +297,8 @@
 (defvar rainbow-index 0)
 
 ;; ASCII face animation variables
-(defvar claude-faces '("(◕‿◕)" "(◔‿◔)" "(◉‿◉)" "(⊙‿⊙)" "(◕‿◕)" "(◔‿◔)"))
-(defvar codex-faces '("[◉_◉]" "[◔_◔]" "[⊙_⊙]" "[○_○]" "[●_●]" "[◔_◔]"))
+(defvar claude-faces '("( ͡° ͜ʖ ͡°)" "¯\\_(ツ)_/¯" "(づ｡◕‿‿◕｡)づ" "ᕕ( ᐛ )ᕗ" "( ͡~ ͜ʖ ͡°)" "(☞ﾟヮﾟ)☞" "༼ つ ◕_◕ ༽つ" "(◕‿◕)" "ʕ•ᴥ•ʔ" "(｡◕‿◕｡)"))
+(defvar codex-faces '("[̲̅$̲̅(̲̅ιοο̲̅)̲̅$̲̅]" "ಠ_ಠ" "(╯°□°）╯" "┬──┬ ノ( ゜-゜ノ)" "(ノಠ益ಠ)ノ" "¯\\_(⊙︿⊙)_/¯" "ლ(ಠ益ಠლ)" "(╯°□°）╯︵ ┻━┻" "┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻" "(ಥ﹏ಥ)"))
 (defvar ascii-face-index 0)
 (defvar ascii-face-timer nil)
 (defvar ascii-face-buffer nil)
@@ -374,7 +374,7 @@
              (color (if (string= current-assistant-mode "claude") "#48dbfb" "#a29bfe"))
              (label (if (string= current-assistant-mode "claude") "Claude" "Codex")))
         (insert "\n\n  ")
-        (insert (propertize face 'face `(:foreground ,color :weight bold :height 3.0)))
+        (insert (propertize face 'face `(:foreground ,color :weight bold :height 2.0)))
         (insert "\n\n  ")
         (insert (propertize label 'face `(:foreground ,color :height 1.2)))
         (insert " vibing..."))
@@ -388,7 +388,7 @@
   "Start the ASCII face blinking animation"
   (when ascii-face-timer
     (cancel-timer ascii-face-timer))
-  (setq ascii-face-timer (run-at-time "0 sec" 0.5 'update-ascii-face)))
+  (setq ascii-face-timer (run-at-time "0 sec" 2.0 'update-ascii-face)))
 
 ;; Function to stop ASCII face animation
 (defun stop-ascii-face-animation ()
