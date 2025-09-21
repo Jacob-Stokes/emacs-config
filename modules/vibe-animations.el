@@ -13,16 +13,44 @@
 (add-to-list 'load-path (expand-file-name "animation-modules"
                                           (file-name-directory load-file-name)))
 
-;; Load individual animation modules
-(require 'rainbow)       ; Rainbow logo animation
-(require 'matrix-rain)   ; Matrix rain effect
-(require 'aquarium)      ; Aquarium with fish and bubbles
+;; Auto-discover and load animation modules
+(defun vibe-discover-animations ()
+  "Automatically discover and load animation modules."
+  (let ((anim-dir (expand-file-name "animation-modules"
+                                    (file-name-directory load-file-name)))
+        (discovered-modes '()))
+
+    (when (file-directory-p anim-dir)
+      (dolist (file (directory-files anim-dir nil "\\.el$"))
+        (unless (string= file "order.el")  ; Skip order.el
+          (let ((module-name (file-name-sans-extension file)))
+            ;; Load the animation module
+            (require (intern module-name))
+            ;; Add to discovered modes (except rainbow which is special)
+            (unless (string= module-name "rainbow")
+              (push module-name discovered-modes))))))
+
+    ;; Load custom ordering if available
+    (let ((cycle-list nil))
+      (when (file-exists-p (expand-file-name "order.el" anim-dir))
+        (require 'order)
+        (when (boundp 'vibe-animation-cycle)
+          (setq cycle-list vibe-animation-cycle)))
+
+      ;; Set animation modes using custom cycle or all discovered
+      (setq animation-modes
+            (or cycle-list
+                (sort discovered-modes 'string<))))
+
+    (message "Animation system: %d modes available: %s"
+             (length animation-modes)
+             (string-join animation-modes ", "))))
+
+;; Discover animations on load
+(vibe-discover-animations)
 
 ;; Animation system control variables
-(defvar animation-modes '("matrix" "aquarium")
-  "Available animation modes for switching.")
-
-(defvar current-animation-mode "matrix"
+(defvar current-animation-mode (or (car animation-modes) "matrix")
   "Currently active animation mode.")
 
 (defvar animation-switch-timer nil
@@ -39,7 +67,9 @@
    ((string= current-animation-mode "matrix")
     (stop-matrix-rain-animation))
    ((string= current-animation-mode "aquarium")
-    (stop-aquarium-animation)))
+    (stop-aquarium-animation))
+   ((string= current-animation-mode "starfield")
+    (stop-starfield-animation)))
 
   ;; Move to next mode
   (let ((current-index (cl-position current-animation-mode animation-modes :test 'string=)))
@@ -49,10 +79,13 @@
   ;; Start new animation
   (cond
    ((string= current-animation-mode "matrix")
+    (create-matrix-rain-buffer)
     (init-matrix-rain)
     (start-matrix-rain-animation))
    ((string= current-animation-mode "aquarium")
-    (start-aquarium-animation)))
+    (start-aquarium-animation))
+   ((string= current-animation-mode "starfield")
+    (start-starfield-animation)))
 
   (message "Switched to %s animation" current-animation-mode))
 
@@ -86,11 +119,12 @@
   (stop-animation-switcher)
   (stop-matrix-rain-animation)
   (stop-aquarium-animation)
+  (stop-starfield-animation)
   (stop-rainbow-animation))
 
 (defun vibe-set-animation (mode)
   "Set a specific animation MODE.
-Valid modes are: matrix, aquarium"
+Valid modes are dynamically discovered from animation-modules."
   (interactive
    (list (completing-read "Animation mode: " animation-modes nil t)))
   (setq current-animation-mode mode)
