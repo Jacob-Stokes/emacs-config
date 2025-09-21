@@ -65,18 +65,8 @@
               (insert (propertize (star-char star)
                                  'face '(:foreground "white"))))))
 
-        ;; Add assistant mode indicator in corner
-        (goto-char (point-min))
-        (end-of-line)
-        (backward-char 8)
-        (let ((mode-text (cond
-                         ((string= current-assistant-mode "claude") "[CLAUDE]")
-                         ((string= current-assistant-mode "codex") "[CODEX]")
-                         ((string= current-assistant-mode "gemini") "[GEMINI]")
-                         ((string= current-assistant-mode "system") "[SYSTEM]")
-                         (t "[STARS]"))))
-          (delete-region (point) (line-end-position))
-          (insert (propertize mode-text 'face '(:foreground "cyan" :weight bold))))
+        ;; Starfield doesn't show assistant mode indicator
+        ;; Just show stars without text
 
         (when was-readonly (read-only-mode 1))))))
 

@@ -121,10 +121,12 @@
 (defun vibe-start-animations ()
   "Start the default animation system"
   (interactive)
+  ;; Ensure shared buffer exists first
+  (create-matrix-rain-buffer)
+
   ;; Start the current animation mode
   (cond
    ((string= current-animation-mode "matrix")
-    (create-matrix-rain-buffer)
     (init-matrix-rain)
     (start-matrix-rain-animation))
    ((string= current-animation-mode "aquarium")
