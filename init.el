@@ -209,6 +209,12 @@
       (insert "    C-x o       Switch windows\n")
       (insert "    C-x 1       Maximize current window\n")
       (insert "    M-x vterm   Open terminal\n\n")
+      (insert "  Tab Management:\n")
+      (insert "  ─────────────────────────────────────────────────────────────\n")
+      (insert "    C-<tab>     Next tab\n")
+      (insert "    C-S-<tab>   Previous tab\n")
+      (insert "    C-t         New tab\n")
+      (insert "    C-w         Close tab\n\n")
       (insert "  Project Management:\n")
       (insert "  ─────────────────────────────────────────────────────────────\n")
       (insert "    C-c p p     Switch project\n")
@@ -233,11 +239,22 @@
       (read-only-mode 1))
     buf))
 
-;; Enable tab-bar-mode for tabs
+;; Enable tab-bar-mode for tabs in main editor
 (when (fboundp 'tab-bar-mode)
   (tab-bar-mode 1)
   (setq tab-bar-show 1)  ; Always show tab bar
-  (setq tab-bar-new-tab-choice "*Welcome*"))  ; Default new tab
+  (setq tab-bar-new-tab-choice "*Welcome*"  ; Default new tab
+        tab-bar-close-button-show t
+        tab-bar-new-button-show t
+        tab-bar-format '(tab-bar-format-tabs
+                        tab-bar-separator
+                        tab-bar-format-align-right
+                        tab-bar-format-global))
+  ;; Better tab appearance
+  (custom-set-faces
+   '(tab-bar ((t (:background "unspecified-bg" :foreground "#E0E0E0"))))
+   '(tab-bar-tab ((t (:background "#3a3a3a" :foreground "#E0E0E0" :box (:line-width 1 :style released-button)))))
+   '(tab-bar-tab-inactive ((t (:background "unspecified-bg" :foreground "#808080"))))))
 
 ;; Store the right pane window for easy reference
 (defvar right-pane-window nil "The window containing the right pane terminals")
@@ -316,8 +333,12 @@
   (other-window 1)
   (switch-to-buffer (create-welcome-buffer))
 
-  ;; First split vertically for right column
-  (split-window-horizontally)
+  ;; Calculate window widths for 60/40 split
+  (let* ((total-width (- (window-width) treemacs-width))
+         (editor-width (floor (* total-width 0.6)))
+         (right-width (- total-width editor-width)))
+    ;; First split vertically for right column
+    (split-window-horizontally (- editor-width)))
   (other-window 1)
 
   ;; Create header buffer for right pane
@@ -382,6 +403,12 @@
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
 (global-set-key (kbd "C-c t") (lambda () (interactive) (ansi-term "/bin/bash")))
+
+;; Tab management keybindings
+(global-set-key (kbd "C-<tab>") 'tab-next)
+(global-set-key (kbd "C-S-<tab>") 'tab-previous)
+(global-set-key (kbd "C-t") 'tab-new)
+(global-set-key (kbd "C-w") 'tab-close)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
