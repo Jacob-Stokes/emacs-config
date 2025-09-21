@@ -188,6 +188,52 @@
   (setq imenu-list-focus-after-activation t
         imenu-list-size 30))
 
+;; Ace-window - Jump to any window quickly
+(use-package ace-window
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)
+        aw-background nil)
+  (set-face-attribute 'aw-leading-char-face nil
+                      :foreground "#ff6b9d"
+                      :weight 'bold
+                      :height 3.0))
+
+;; Dashboard - Better startup screen
+(use-package dashboard
+  :config
+  (setq dashboard-banner-logo-title "[ Vibes + Emacs = Maximum Flow ]"
+        dashboard-startup-banner 'logo
+        dashboard-center-content t
+        dashboard-items '((recents  . 5)
+                          (projects . 5))
+        dashboard-set-heading-icons nil
+        dashboard-set-file-icons nil  ; Terminal friendly
+        dashboard-week-agenda nil
+        dashboard-filter-agenda-entry 'dashboard-no-filter-agenda)
+
+  ;; Custom ASCII banner
+  (setq dashboard-footer-messages '("Ready to vibe? 🌈"))
+
+  ;; Override the banner with our VIBEMACS logo
+  (defun dashboard-insert-custom-banner ()
+    "Insert our custom VIBEMACS banner with rainbow effect"
+    (insert "\n")
+    (insert "   ██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+    (insert "   ██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+    (insert "   ██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+    (insert "   ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+    (insert "    ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+    (insert "     ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
+    (insert "\n"))
+
+  (advice-add 'dashboard-insert-banner :override #'dashboard-insert-custom-banner)
+
+  ;; Initialize dashboard
+  (dashboard-setup-startup-hook)
+
+  ;; Hook to start rainbow animation when dashboard loads
+  (add-hook 'dashboard-after-initialize-hook 'start-rainbow-animation))
+
 ;; We'll use built-in ansi-term instead of vterm for better compatibility
 
 ;; Line numbers - only for programming/text modes
@@ -243,26 +289,29 @@
 (defvar rainbow-timer nil)
 (defvar rainbow-index 0)
 
-;; Function to update rainbow colors
+;; Function to update rainbow colors - works with both Welcome and Dashboard
 (defun update-rainbow-logo ()
   "Update the VIBEMACS logo with rainbow effect"
-  (when (get-buffer "*Welcome*")
-    (with-current-buffer "*Welcome*"
-      (when buffer-read-only
-        (read-only-mode -1)
-        (save-excursion
-          (goto-char (point-min))
-          (forward-line 1) ; Skip first empty line
-          (let ((colors (append (nthcdr rainbow-index rainbow-colors)
-                               (cl-subseq rainbow-colors 0 rainbow-index))))
-            ;; Update each line with shifted colors
-            (dotimes (i 6)
-              (let ((line-start (point))
-                    (line-end (progn (end-of-line) (point))))
-                (add-text-properties line-start line-end
-                                   `(face (:foreground ,(nth i colors) :weight bold)))
-                (forward-line 1)))))
-        (read-only-mode 1)))
+  (let ((buffer (or (get-buffer "*dashboard*") (get-buffer "*Welcome*"))))
+    (when buffer
+      (with-current-buffer buffer
+        (let ((was-readonly buffer-read-only))
+          (when was-readonly (read-only-mode -1))
+          (save-excursion
+            (goto-char (point-min))
+            ;; Find the logo start (look for the first ██)
+            (when (search-forward "██╗" nil t)
+              (beginning-of-line)
+              (let ((colors (append (nthcdr rainbow-index rainbow-colors)
+                                   (cl-subseq rainbow-colors 0 rainbow-index))))
+                ;; Update each line with shifted colors
+                (dotimes (i 6)
+                  (let ((line-start (point))
+                        (line-end (progn (end-of-line) (point))))
+                    (add-text-properties line-start line-end
+                                       `(face (:foreground ,(nth i colors) :weight bold)))
+                    (forward-line 1))))))
+          (when was-readonly (read-only-mode 1)))))
     (setq rainbow-index (mod (1+ rainbow-index) (length rainbow-colors)))))
 
 ;; Function to start rainbow animation
@@ -339,7 +388,7 @@
 (when (fboundp 'tab-bar-mode)
   (tab-bar-mode 1)
   (setq tab-bar-show 1)  ; Always show tab bar
-  (setq tab-bar-new-tab-choice "*Welcome*"))  ; Default new tab
+  (setq tab-bar-new-tab-choice "*dashboard*"))  ; Default new tab
 
 ;; Store the right pane window for easy reference
 (defvar right-pane-window nil "The window containing the right pane terminals")
@@ -416,7 +465,7 @@
 
   ;; Create main editor window in center
   (other-window 1)
-  (switch-to-buffer (create-welcome-buffer))
+  (dashboard-refresh-buffer)
   (start-rainbow-animation)  ; Start the rainbow effect
 
   ;; First split vertically for right column (65% editor, 35% right pane)
@@ -490,6 +539,8 @@
 (global-set-key (kbd "C-c t") (lambda () (interactive) (ansi-term "/bin/bash")))
 (global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
 (global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle
+(global-set-key (kbd "M-o") 'ace-window)  ; Quick window jumping
+(global-set-key (kbd "C-x C-b") 'dashboard-refresh-buffer)  ; Quick return to dashboard
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
