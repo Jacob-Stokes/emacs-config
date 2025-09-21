@@ -355,8 +355,9 @@
   (setq right-pane-active-terminal "claude")
   (update-right-pane-header)
 
-  ;; Go back to middle window (skip header window)
-  (other-window -2)
+  ;; Go back to middle window - need to go through treemacs
+  (other-window 1)  ; This should go to treemacs
+  (other-window 1)  ; This should go to middle window
 
   ;; Now split the middle window for bottom terminal
   (let ((height (window-height)))
