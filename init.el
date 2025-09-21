@@ -708,6 +708,12 @@
 
       ;; Open standard terminal at bottom left
       (ansi-term "/bin/bash" "bottom-terminal")
+      (with-current-buffer "*bottom-terminal*"
+        (sleep-for 0.2)
+        ;; Set a minimal prompt and clear
+        (term-send-string (get-buffer-process (current-buffer)) "PS1='> '\n")
+        (term-send-string (get-buffer-process (current-buffer)) "clear\n")
+        (term-send-string (get-buffer-process (current-buffer)) "echo 'Terminal ready. Start typing...'\n"))
 
       ;; Move to bottom right for matrix rain
       (other-window 1)
