@@ -217,15 +217,19 @@
   ;; Override the banner with our VIBEMACS logo
   (defun dashboard-insert-custom-banner ()
     "Insert our custom VIBEMACS banner with rainbow effect"
-    (insert "\n")
-    ;; Left aligned, no padding
-    (insert "██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
-    (insert "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
-    (insert "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
-    (insert "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
-    (insert " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
-    (insert "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
-    (insert "\n"))
+    (let* ((logo-width 68)  ; Actual width of the VIBEMACS logo
+           (window-width (window-width))
+           (padding (max 0 (/ (- window-width logo-width) 2)))
+           (pad-str (make-string padding ?\s)))
+      (insert "\n")
+      ;; Insert each line with calculated padding
+      (insert pad-str "██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n")
+      (insert pad-str "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n")
+      (insert pad-str "██║   ██║██║██████╔╝█████╗  ██╔████╔██║███████║██║     ███████╗\n")
+      (insert pad-str "╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║╚██╔╝██║██╔══██║██║     ╚════██║\n")
+      (insert pad-str " ╚████╔╝ ██║██████╔╝███████╗██║ ╚═╝ ██║██║  ██║╚██████╗███████║\n")
+      (insert pad-str "  ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝╚══════╝\n")
+      (insert "\n")))
 
   (advice-add 'dashboard-insert-banner :override #'dashboard-insert-custom-banner)
 
@@ -284,6 +288,12 @@
 
 ;; Set default directory
 (setq default-directory "/root/")
+
+;; Exclude certain files from recent files
+(with-eval-after-load 'recentf
+  (add-to-list 'recentf-exclude ".*/\\.treemacs-persist")
+  (add-to-list 'recentf-exclude ".*/\\.treemacs-persist\\'")
+  (add-to-list 'recentf-exclude "treemacs-persist"))
 
 ;; Rainbow animation variables - muted/pastel rainbow
 (defvar rainbow-colors '("#ff6b9d" "#feca57" "#c7ecee" "#48dbfb" "#0abde3" "#667eea" "#a29bfe"))
