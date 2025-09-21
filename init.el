@@ -301,6 +301,12 @@
 (defvar rainbow-timer nil)
 (defvar rainbow-index 0)
 
+;; Animation system variables
+(defvar animation-modes '("matrix" "aquarium"))  ; Available animation modes
+(defvar current-animation-mode "matrix")  ; Current animation mode
+(defvar animation-switch-timer nil)  ; Timer for automatic switching
+(defvar animation-switch-interval 30)  ; Seconds between switches
+
 ;; Matrix rain animation variables
 (defvar matrix-rain-timer nil)
 (defvar matrix-rain-buffer nil)
@@ -309,6 +315,11 @@
 (defvar matrix-width 20)  ; Width of the matrix display
 (defvar matrix-height 10) ; Height of the matrix display
 (defvar current-assistant-mode "claude")  ; Track which assistant is active
+
+;; Aquarium animation variables
+(defvar aquarium-timer nil)
+(defvar aquarium-fishes nil)
+(defvar aquarium-bubbles nil)
 
 ;; Function to update rainbow colors - works with both Welcome and Dashboard
 (defun update-rainbow-logo ()
@@ -467,6 +478,132 @@
     (cancel-timer matrix-rain-timer)
     (setq matrix-rain-timer nil)))
 
+;; Aquarium animation functions
+(defun init-aquarium ()
+  "Initialize the aquarium with fish and bubbles"
+  (let ((win (get-buffer-window matrix-rain-buffer)))
+    (when win
+      (setq matrix-width (- (window-width win) 2))
+      (setq matrix-height (- (window-height win) 1))))
+  ;; Create fish with random positions and directions
+  (setq aquarium-fishes
+        (list (list :x 5 :y 3 :dir 1 :type "<><")
+              (list :x 15 :y 5 :dir -1 :type "><>")
+              (list :x 10 :y 7 :dir 1 :type "<°))))><")))
+  ;; Create bubbles
+  (setq aquarium-bubbles
+        (list (list :x 8 :y (- matrix-height 2))
+              (list :x 20 :y (- matrix-height 4))
+              (list :x 14 :y (- matrix-height 1)))))
+
+(defun update-aquarium ()
+  "Update the aquarium animation"
+  (when (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
+    (with-current-buffer matrix-rain-buffer
+      (read-only-mode -1)
+      (erase-buffer)
+      ;; Draw water background
+      (dotimes (y matrix-height)
+        (dotimes (x matrix-width)
+          (insert (if (= (random 20) 0) "~" " ")))
+        (insert "\n"))
+      ;; Draw fish
+      (dolist (fish aquarium-fishes)
+        (let ((x (plist-get fish :x))
+              (y (plist-get fish :y))
+              (dir (plist-get fish :dir))
+              (type (plist-get fish :type)))
+          ;; Move fish
+          (plist-put fish :x (+ x dir))
+          ;; Reverse direction at edges
+          (when (or (<= (plist-get fish :x) 0)
+                    (>= (plist-get fish :x) (- matrix-width (length type))))
+            (plist-put fish :dir (- dir)))
+          ;; Draw fish at position
+          (when (and (>= y 0) (< y matrix-height)
+                     (>= x 0) (< x matrix-width))
+            (goto-char (+ (* y (1+ matrix-width)) x 1))
+            (delete-char (length type))
+            (insert (propertize type 'face '(:foreground "orange"))))))
+      ;; Draw bubbles
+      (dolist (bubble aquarium-bubbles)
+        (let ((x (plist-get bubble :x))
+              (y (plist-get bubble :y)))
+          ;; Move bubble up
+          (plist-put bubble :y (1- y))
+          ;; Reset bubble at bottom when it reaches top
+          (when (< (plist-get bubble :y) 0)
+            (plist-put bubble :y (- matrix-height 1))
+            (plist-put bubble :x (random matrix-width)))
+          ;; Draw bubble
+          (when (and (>= y 0) (< y matrix-height)
+                     (>= x 0) (< x matrix-width))
+            (goto-char (+ (* y (1+ matrix-width)) x 1))
+            (delete-char 1)
+            (insert (propertize "o" 'face '(:foreground "cyan"))))))
+      ;; Add mode indicator
+      (goto-char (point-max))
+      (let ((color (cond
+                    ((string= current-assistant-mode "claude") "#48dbfb")
+                    ((string= current-assistant-mode "gpt") "#a29bfe")
+                    ((string= current-assistant-mode "gemini") "#4CAF50")
+                    (t "#888888")))
+            (label (cond
+                    ((string= current-assistant-mode "claude") "[CLAUDE]")
+                    ((string= current-assistant-mode "gpt") "[CODEX]")
+                    ((string= current-assistant-mode "gemini") "[GEMINI]")
+                    (t "[UNKNOWN]"))))
+        (insert (propertize label 'face `(:foreground ,color :weight bold))))
+      (read-only-mode 1))))
+
+(defun start-aquarium-animation ()
+  "Start the aquarium animation"
+  (when aquarium-timer
+    (cancel-timer aquarium-timer))
+  (init-aquarium)
+  (setq aquarium-timer (run-at-time "0 sec" 0.2 'update-aquarium)))
+
+(defun stop-aquarium-animation ()
+  "Stop the aquarium animation"
+  (when aquarium-timer
+    (cancel-timer aquarium-timer)
+    (setq aquarium-timer nil)))
+
+;; Master animation control
+(defun switch-animation-mode ()
+  "Switch to the next animation mode"
+  ;; Stop current animation
+  (cond
+   ((string= current-animation-mode "matrix")
+    (stop-matrix-rain-animation))
+   ((string= current-animation-mode "aquarium")
+    (stop-aquarium-animation)))
+  ;; Move to next mode
+  (let ((current-index (cl-position current-animation-mode animation-modes :test 'string=)))
+    (setq current-animation-mode
+          (nth (% (1+ current-index) (length animation-modes)) animation-modes)))
+  ;; Start new animation
+  (cond
+   ((string= current-animation-mode "matrix")
+    (init-matrix-rain)
+    (start-matrix-rain-animation))
+   ((string= current-animation-mode "aquarium")
+    (start-aquarium-animation)))
+  (message "Switched to %s animation" current-animation-mode))
+
+(defun start-animation-switcher ()
+  "Start automatic animation switching"
+  (when animation-switch-timer
+    (cancel-timer animation-switch-timer))
+  (setq animation-switch-timer
+        (run-at-time animation-switch-interval animation-switch-interval 'switch-animation-mode)))
+
+(defun stop-animation-switcher ()
+  "Stop automatic animation switching"
+  (when animation-switch-timer
+    (cancel-timer animation-switch-timer)
+    (setq animation-switch-timer nil)))
+
 ;; Function to create welcome buffer
 (defun create-welcome-buffer ()
   "Create a welcome buffer with instructions"
@@ -613,6 +750,9 @@
 (global-set-key (kbd "C-c g") (lambda () (interactive) (switch-right-terminal "gpt")))
 (global-set-key (kbd "C-c j") (lambda () (interactive) (switch-right-terminal "gemini")))
 
+;; Keybinding to manually switch animation
+(global-set-key (kbd "C-c n") 'switch-animation-mode)
+
 ;; Enable automatic window resizing
 (setq window-combination-resize t)
 
@@ -743,6 +883,7 @@
       (switch-to-buffer matrix-rain-buffer)
       (init-matrix-rain)  ; Initialize after window is created
       (start-matrix-rain-animation)
+      (start-animation-switcher)  ; Start automatic animation switching
       (set-window-dedicated-p (selected-window) t)
       (set-window-parameter (selected-window) 'no-other-window t)
 
