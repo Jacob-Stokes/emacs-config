@@ -529,21 +529,6 @@
     (unless (get-buffer-window "*treemacs*")
       (treemacs))
 
-    ;; Add ASCII face below treemacs
-    (let* ((treemacs-win (selected-window))
-           (height (window-height))
-           (treemacs-height (floor (* height 0.8))))
-      (split-window-vertically treemacs-height)
-      (other-window 1)
-      (if (and ascii-face-buffer (buffer-live-p ascii-face-buffer))
-          (switch-to-buffer ascii-face-buffer)
-        (progn
-          (create-ascii-face-buffer)
-          (switch-to-buffer ascii-face-buffer)
-          (start-ascii-face-animation)))
-      (set-window-dedicated-p (selected-window) t)
-      (set-window-parameter (selected-window) 'no-other-window t))
-
     ;; Go to main window
     (other-window 1)
 
@@ -579,21 +564,7 @@
       (unless (get-buffer-window "*treemacs*")
         (treemacs))
 
-      ;; Split treemacs vertically for ASCII face (80% treemacs, 20% face)
-      (let* ((treemacs-win (selected-window))
-             (height (window-height))
-             (treemacs-height (floor (* height 0.8))))
-        (split-window-vertically treemacs-height)
-        (other-window 1)
-        ;; Show ASCII face buffer
-        (create-ascii-face-buffer)
-        (switch-to-buffer ascii-face-buffer)
-        (start-ascii-face-animation)
-        ;; Make this window dedicated
-        (set-window-dedicated-p (selected-window) t)
-        (set-window-parameter (selected-window) 'no-other-window t))
-
-      ;; Move to main editor window (skip the ASCII face window)
+      ;; Move to main editor window
       (other-window 1)
       (dashboard-refresh-buffer)
       (start-rainbow-animation)  ; Start the rainbow effect
@@ -651,8 +622,20 @@
         (split-window-vertically editor-height))
 
       (other-window 1)
-      ;; Open standard terminal at bottom middle
+
+      ;; Split bottom area horizontally - left for terminal, right for ASCII face
+      (split-window-horizontally (floor (* (window-width) 0.7)))
+
+      ;; Open standard terminal at bottom left
       (ansi-term "/bin/bash" "bottom-terminal")
+
+      ;; Move to bottom right for ASCII face
+      (other-window 1)
+      (create-ascii-face-buffer)
+      (switch-to-buffer ascii-face-buffer)
+      (start-ascii-face-animation)
+      (set-window-dedicated-p (selected-window) t)
+      (set-window-parameter (selected-window) 'no-other-window t)
 
       ;; Focus back on top middle editor window
       (other-window -1))))
