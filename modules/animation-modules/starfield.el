@@ -65,7 +65,7 @@
             (setf (star-y star) (random matrix-height)))
 
           ;; Draw star at position
-          (let ((pos (+ (* (star-y star) (+ matrix-width 1)) (star-x star) 1)))
+          (let ((pos (+ (* (star-y star) (+ matrix-width 2)) (star-x star) 2)))  ; Account for padding
             (when (and (>= pos 1) (<= pos (point-max)))
               (goto-char pos)
               (delete-char 1)

@@ -150,8 +150,8 @@
 
         ;; Draw food
         (when snake-food
-          (let ((pos (+ (* (cdr snake-food) (+ matrix-width 1))
-                        (car snake-food) 1)))
+          (let ((pos (+ (* (cdr snake-food) (+ matrix-width 2))
+                        (car snake-food) 2)))  ; Account for padding
             (when (and (>= pos 1) (<= pos (point-max)))
               (goto-char pos)
               (delete-char 1)
@@ -159,8 +159,8 @@
 
         ;; Draw snake
         (dolist (segment snake-body)
-          (let ((pos (+ (* (cdr segment) (+ matrix-width 1))
-                        (car segment) 1)))
+          (let ((pos (+ (* (cdr segment) (+ matrix-width 2))
+                        (car segment) 2)))  ; Account for padding
             (when (and (>= pos 1) (<= pos (point-max)))
               (goto-char pos)
               (delete-char 1)

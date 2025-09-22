@@ -56,7 +56,7 @@
           ;; Draw fish at position
           (when (and (>= y 0) (< y matrix-height)
                      (>= x 0) (< x matrix-width))
-            (goto-char (+ (* y (1+ matrix-width)) x 1))
+            (goto-char (+ (* y (+ matrix-width 2)) x 2))  ; +2 for left padding and newline
             (delete-char (length type))
             (insert (propertize type 'face '(:foreground "orange"))))))
       ;; Draw bubbles
@@ -72,7 +72,7 @@
           ;; Draw bubble
           (when (and (>= y 0) (< y matrix-height)
                      (>= x 0) (< x matrix-width))
-            (goto-char (+ (* y (1+ matrix-width)) x 1))
+            (goto-char (+ (* y (+ matrix-width 2)) x 2))  ; +2 for left padding and newline
             (delete-char 1)
             (insert (propertize "o" 'face '(:foreground "cyan"))))))
       ;; Animation complete

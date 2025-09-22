@@ -60,9 +60,9 @@
                                      (length scroll-logo-colors))
                                 scroll-logo-colors)))
                 (when (and (>= target-row 0) (< target-row matrix-height))
-                  ;; Position cursor at the target row
-                  (goto-char (1+ (* target-row (1+ matrix-width))))
-                  (forward-char (max 0 logo-x))
+                  ;; Position cursor at the target row (accounting for padding)
+                  (goto-char (1+ (* target-row (+ matrix-width 2))))  ; +2 for padding + newline
+                  (forward-char (max 0 (+ logo-x 1)))  ; +1 for left padding
 
                   ;; Draw visible portion of logo line
                   (let* ((logo-line-len (length logo-line))
