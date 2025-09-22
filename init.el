@@ -103,7 +103,7 @@
   :config
   (progn
     (setq treemacs-width 30
-          treemacs-is-never-other-window nil
+          treemacs-is-never-other-window nil  ; Allow in other-window cycling for layout setup
           treemacs-show-hidden-files t
           treemacs-git-mode 'simple
           treemacs-follow-mode t
@@ -115,11 +115,50 @@
     ;; Make treemacs background transparent too
     (set-face-background 'treemacs-root-face "unspecified-bg")
     (set-face-background 'treemacs-file-face "unspecified-bg")
-    (set-face-background 'treemacs-directory-face "unspecified-bg"))
+    (set-face-background 'treemacs-directory-face "unspecified-bg")
+
+    ;; Custom folder colors for vibe
+    (set-face-foreground 'treemacs-directory-face "#66d9ef")  ; Cyan folders
+    (set-face-foreground 'treemacs-root-face "#ff6b9d")       ; Pink root
+    (set-face-foreground 'treemacs-file-face "#a6e22e")       ; Green files
+    (set-face-foreground 'treemacs-git-modified-face "#fd971f") ; Orange modified
+    (set-face-foreground 'treemacs-git-untracked-face "#75715e") ; Gray untracked
+
+    ;; Custom dotfile/dotfolder highlighting
+    (defun treemacs-custom-face-function (file)
+      "Custom face function for dotfiles and dotfolders."
+      (let ((filename (file-name-nondirectory file)))
+        (cond
+         ;; Dotfolders - purple
+         ((and (file-directory-p file) (string-prefix-p "." filename))
+          'treemacs-dotfolder-face)
+         ;; Dotfiles - dimmed purple
+         ((string-prefix-p "." filename)
+          'treemacs-dotfile-face)
+         ;; Regular folders - cyan (default)
+         ((file-directory-p file)
+          'treemacs-directory-face)
+         ;; Regular files - green (default)
+         (t 'treemacs-file-face))))
+
+    ;; Define custom faces for dotfiles/dotfolders
+    (defface treemacs-dotfolder-face
+      '((t :foreground "#a29bfe" :weight bold))  ; Purple dotfolders
+      "Face for dotfolders in treemacs.")
+
+    (defface treemacs-dotfile-face
+      '((t :foreground "#8e7cc3"))  ; Dimmed purple dotfiles
+      "Face for dotfiles in treemacs.")
+
+    ;; Apply custom face function (if treemacs supports it)
+    (when (boundp 'treemacs-file-face-functions)
+      (add-to-list 'treemacs-file-face-functions 'treemacs-custom-face-function))
+
+    ;; Add C-c o to treemacs keymap for consistent navigation
+    (define-key treemacs-mode-map (kbd "C-c o") 'other-window))
   :bind
   (:map global-map
-        ("M-0"       . treemacs-select-window)
-        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-c v t"   . treemacs-select-window)  ; Easy access to treemacs
         ("C-x t t"   . treemacs)
         ("C-x t d"   . treemacs-select-directory)
         ("C-x t B"   . treemacs-bookmark)
@@ -157,14 +196,14 @@
 
 ;; VIBE FEATURES
 
-;; Beacon - Flash cursor when switching windows
-(use-package beacon
-  :config
-  (beacon-mode 1)
-  (setq beacon-color "#00ff00"
-        beacon-blink-duration 0.3
-        beacon-blink-delay 0.1
-        beacon-size 20))
+;; Beacon - Flash cursor when switching windows (DISABLED)
+;; (use-package beacon
+;;   :config
+;;   (beacon-mode 1)
+;;   (setq beacon-color "#00ff00"
+;;         beacon-blink-duration 0.3
+;;         beacon-blink-delay 0.1
+;;         beacon-size 20))
 
 ;; Rainbow-mode - Colorize color codes
 (use-package rainbow-mode
@@ -282,9 +321,9 @@
 ;; Show matching parentheses
 (show-paren-mode 1)
 
-;; Better scrolling
+;; Better scrolling (conservative scrolling disabled for terminal performance)
 (setq scroll-margin 3
-      scroll-conservatively 10000)
+      scroll-conservatively 0)
 
 ;; Auto-save and backup settings
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups"))
@@ -518,11 +557,32 @@
               (vibe-initialize-panel-system)
               (run-at-time "2 sec" nil #'setup-vscode-layout))))
 
+;; Zone.el - Built-in screensavers
+(require 'zone)
+(setq zone-timer (run-with-idle-timer 300 t 'zone))  ; Auto-zone after 5 minutes idle
+
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
 (global-set-key (kbd "C-c t") (lambda () (interactive) (ansi-term "/bin/bash")))
 (global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
 (global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle
+(global-set-key (kbd "C-c v z") 'zone)  ; Instant screensaver/boss mode
+;; Smart window cycling that skips Treemacs
+(defun vibe-other-window ()
+  "Cycle through windows, skipping Treemacs."
+  (interactive)
+  (let ((start-window (selected-window))
+        (tried-windows 0)
+        (max-tries 10))
+    (other-window 1)
+    (while (and (< tried-windows max-tries)
+                (string-match "\\*treemacs\\*" (buffer-name)))
+      (other-window 1)
+      (setq tried-windows (1+ tried-windows))
+      (when (eq (selected-window) start-window)
+        (break)))))
+
+(global-set-key (kbd "C-c o") 'vibe-other-window)  ; Cycle through main windows
 (global-set-key (kbd "M-o") 'ace-window)  ; Quick window jumping
 (global-set-key (kbd "C-x C-b") 'dashboard-refresh-buffer)  ; Quick return to dashboard
 (custom-set-variables
