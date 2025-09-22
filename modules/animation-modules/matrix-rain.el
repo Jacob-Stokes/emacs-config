@@ -102,8 +102,8 @@
                                (t "#004400"))))              ; Very dark
                     (insert (propertize (string char) 'face `(:foreground ,color)))))))
             (insert "\n")))
-        ;; Animation complete)
-      (read-only-mode 1))))
+        ;; Animation complete
+        (read-only-mode 1)))))
 
 (defun start-matrix-rain-animation ()
   "Start the matrix rain animation"
