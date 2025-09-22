@@ -290,8 +290,22 @@
 
 ;; We'll use built-in ansi-term instead of vterm for better compatibility
 
-;; Line numbers - only for programming/text modes
-(setq display-line-numbers-type 'relative)
+;; Line numbers - only for programming/text modes with padding
+(setq display-line-numbers-type t)  ; Use absolute line numbers (change to 'relative for vim-style)
+(setq display-line-numbers-width-start t)  ; Reserve space for line numbers
+(setq display-line-numbers-width 3)        ; Minimum width for line numbers
+
+;; Add visual separation between line numbers and content
+(set-face-attribute 'line-number nil
+                    :background "unspecified-bg"
+                    :foreground "#666666")
+(set-face-attribute 'line-number-current-line nil
+                    :background "unspecified-bg"
+                    :foreground "#00ff00"
+                    :weight 'bold)
+
+;; Add a space after line numbers using fringe
+(setq-default left-fringe-width 8)  ; Add small left fringe for spacing
 
 ;; Hook to enable line numbers only in programming and text modes
 (add-hook 'prog-mode-hook 'display-line-numbers-mode)
@@ -420,14 +434,13 @@
   (setq tab-bar-show 1)  ; Always show tab bar
   (setq tab-bar-new-tab-choice "*dashboard*"))  ; Default new tab
 
-;; Configure tab-line-mode for buffer tabs
+;; Configure tab-line-mode for buffer tabs (works better in terminal)
 (require 'tab-line)
 
 ;; Customize tab-line appearance
 (setq tab-line-new-button-show nil)  ; Hide new button
 (setq tab-line-close-button-show t)  ; Show close button
-(setq tab-line-separator " ")        ; Space between tabs
-(setq tab-line-format '(:eval (concat (funcall tab-line-tabs-function) "\n")))  ; Add newline after tabs
+(setq tab-line-separator " │ ")      ; Separator between tabs
 
 ;; Custom function to filter buffers for tab-line
 (defun vibe-tab-line-buffer-filter ()
@@ -448,15 +461,25 @@
 ;; Set the buffer filter for tab-line
 (setq tab-line-tabs-function 'vibe-tab-line-buffer-filter)
 
-;; Custom faces for tab-line
+;; Custom faces for tab-line (terminal-friendly)
 (set-face-attribute 'tab-line nil
-                    :background "unspecified-bg"
-                    :foreground "#888888"
+                    :background "brightblack"  ; Light gray background like tab-bar
+                    :foreground "black"
                     :height 1.0)
-(set-face-attribute 'tab-line-tab nil :background "#2d2d2d" :foreground "#cccccc")
-(set-face-attribute 'tab-line-tab-current nil :background "unspecified-bg" :foreground "#00ff00" :weight 'bold :underline t)
-(set-face-attribute 'tab-line-tab-inactive nil :background "unspecified-bg" :foreground "#666666")
-(set-face-attribute 'tab-line-highlight nil :background "#3e3e3e")
+(set-face-attribute 'tab-line-tab nil
+                    :background "brightblack"
+                    :foreground "black")
+(set-face-attribute 'tab-line-tab-current nil
+                    :background "brightblack"
+                    :foreground "green"
+                    :weight 'bold
+                    :underline t)
+(set-face-attribute 'tab-line-tab-inactive nil
+                    :background "brightblack"
+                    :foreground "black")  ; Make inactive tabs visible
+(set-face-attribute 'tab-line-highlight nil
+                    :background "white"
+                    :foreground "black")
 
 ;; Function to enable tab-line only in file buffers
 (defun vibe-enable-tab-line-selectively ()
@@ -472,7 +495,7 @@
 (add-hook 'after-change-major-mode-hook 'vibe-enable-tab-line-selectively)
 (add-hook 'find-file-hook 'vibe-enable-tab-line-selectively)
 
-;; Keybindings for tab navigation (browser-friendly)
+;; Browser-friendly keybindings for tab navigation
 (global-set-key (kbd "C-c ]") 'tab-line-switch-to-next-tab)     ; Next tab
 (global-set-key (kbd "C-c [") 'tab-line-switch-to-prev-tab)     ; Previous tab
 
