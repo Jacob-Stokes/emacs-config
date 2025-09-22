@@ -12,7 +12,7 @@
 (defvar matrix-chars "01ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜﾝ")
 (defvar matrix-width 20)  ; Width of the matrix display
 (defvar matrix-height 10) ; Height of the matrix display
-(defvar current-assistant-mode "claude")  ; Track which assistant is active
+;; Assistant mode display removed - cleaner animations
 
 (defun init-matrix-rain ()
   "Initialize the matrix rain columns"
@@ -102,18 +102,7 @@
                                (t "#004400"))))              ; Very dark
                     (insert (propertize (string char) 'face `(:foreground ,color)))))))
             (insert "\n")))
-        ;; Add mode indicator at bottom
-        (let ((color (cond
-                      ((string= current-assistant-mode "claude") "#48dbfb")
-                      ((string= current-assistant-mode "gpt") "#a29bfe")
-                      ((string= current-assistant-mode "gemini") "#4CAF50")
-                      (t "#888888")))
-              (label (cond
-                      ((string= current-assistant-mode "claude") "[CLAUDE]")
-                      ((string= current-assistant-mode "gpt") "[CODEX]")
-                      ((string= current-assistant-mode "gemini") "[GEMINI]")
-                      (t "[UNKNOWN]"))))
-          (insert (propertize label 'face `(:foreground ,color :weight bold)))))
+        ;; Animation complete)
       (read-only-mode 1))))
 
 (defun start-matrix-rain-animation ()

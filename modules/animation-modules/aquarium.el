@@ -75,19 +75,7 @@
             (goto-char (+ (* y (1+ matrix-width)) x 1))
             (delete-char 1)
             (insert (propertize "o" 'face '(:foreground "cyan"))))))
-      ;; Add mode indicator
-      (goto-char (point-max))
-      (let ((color (cond
-                    ((string= current-assistant-mode "claude") "#48dbfb")
-                    ((string= current-assistant-mode "gpt") "#a29bfe")
-                    ((string= current-assistant-mode "gemini") "#4CAF50")
-                    (t "#888888")))
-            (label (cond
-                    ((string= current-assistant-mode "claude") "[CLAUDE]")
-                    ((string= current-assistant-mode "gpt") "[CODEX]")
-                    ((string= current-assistant-mode "gemini") "[GEMINI]")
-                    (t "[UNKNOWN]"))))
-        (insert (propertize label 'face `(:foreground ,color :weight bold))))
+      ;; Animation complete
       (read-only-mode 1))))
 
 (defun start-aquarium-animation ()

@@ -37,9 +37,6 @@
 (defvar animation-height 24
   "Height of animation display.")
 
-(defvar current-assistant-mode "claude"
-  "Current assistant mode for display in animations.")
-
 ;; Legacy aliases for backward compatibility
 (defvaralias 'matrix-rain-buffer 'animation-buffer)
 (defvaralias 'matrix-width 'animation-width)
@@ -91,7 +88,7 @@
   (unless (and animation-buffer (buffer-live-p animation-buffer))
     (setq animation-buffer (get-buffer-create animation-buffer-name))
     (with-current-buffer animation-buffer
-      (setq mode-line-format nil)
+      ;; Keep mode-line for status bar
       (setq cursor-type nil)
       (setq truncate-lines t)
       (setq buffer-read-only t))))

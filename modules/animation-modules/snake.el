@@ -170,20 +170,9 @@
                 ;; Body
                 (insert (propertize "▪" 'face '(:foreground "#48dbfb")))))))
 
-        ;; Show score and mode
+        ;; Show score at bottom
         (goto-char (point-max))
-        (insert (format "\n Score: %d  " snake-score))
-        (let ((color (cond
-                      ((string= current-assistant-mode "claude") "#48dbfb")
-                      ((string= current-assistant-mode "gpt") "#a29bfe")
-                      ((string= current-assistant-mode "gemini") "#4CAF50")
-                      (t "#888888")))
-              (label (cond
-                      ((string= current-assistant-mode "claude") "[CLAUDE]")
-                      ((string= current-assistant-mode "gpt") "[CODEX]")
-                      ((string= current-assistant-mode "gemini") "[GEMINI]")
-                      (t "[UNKNOWN]"))))
-          (insert (propertize label 'face `(:foreground ,color :weight bold))))
+        (insert (format "\n Score: %d" snake-score))
 
         (when was-readonly (read-only-mode 1))))))
 
