@@ -120,6 +120,7 @@
   "Start the matrix rain animation"
   (when matrix-rain-timer
     (cancel-timer matrix-rain-timer))
+  (init-matrix-rain)  ; Initialize the matrix columns
   (setq matrix-rain-timer (run-at-time "0 sec" 0.1 'update-matrix-rain)))
 
 (defun stop-matrix-rain-animation ()
