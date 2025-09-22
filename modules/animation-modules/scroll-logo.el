@@ -33,7 +33,7 @@
         ;; Ensure proper window sizing
         (let ((win (get-buffer-window matrix-rain-buffer)))
           (when win
-            (setq matrix-width (max 80 (- (window-width win) 2)))
+            (setq matrix-width (max 80 (- (window-width win) 3)))  ; Account for padding
             (setq matrix-height (max 15 (- (window-height win) 1)))))
 
         ;; Calculate logo positioning

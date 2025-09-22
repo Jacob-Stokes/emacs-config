@@ -19,7 +19,7 @@
   ;; Get actual window dimensions
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (- (window-width win) 2))  ; Account for margins
+      (setq matrix-width (- (window-width win) 3))  ; Account for left+right padding (1 char each) plus border
       (setq matrix-height (- (window-height win) 1))))  ; Account for mode line
   (setq matrix-columns (make-vector matrix-width nil))
   (dotimes (i matrix-width)
@@ -44,7 +44,7 @@
       ;; Update dimensions if window size changed
       (let ((win (get-buffer-window matrix-rain-buffer)))
         (when win
-          (let ((new-width (- (window-width win) 2))  ; Account for margins
+          (let ((new-width (- (window-width win) 3))  ; Account for padding
                 (new-height (- (window-height win) 1)))  ; Account for mode line
             (when (or (/= new-width matrix-width)
                       (/= new-height matrix-height))
@@ -87,7 +87,7 @@
         ;; Display the matrix
         (dotimes (y matrix-height)
           (let ((line (aref display y)))
-            (insert " ")  ; Add left padding
+            (insert " ")  ; Add left padding (1 char)
             (dotimes (x matrix-width)
               (let* ((char (aref line x))
                      (col-data (aref matrix-columns x))

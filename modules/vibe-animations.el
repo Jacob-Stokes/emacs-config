@@ -37,6 +37,9 @@
 (defvar animation-height 24
   "Height of animation display.")
 
+(defvar animation-padding 1
+  "Number of characters padding on left and right sides.")
+
 ;; Legacy aliases for backward compatibility
 (defvaralias 'matrix-rain-buffer 'animation-buffer)
 (defvaralias 'matrix-width 'animation-width)

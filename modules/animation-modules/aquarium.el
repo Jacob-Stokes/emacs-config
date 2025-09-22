@@ -16,7 +16,7 @@
   "Initialize the aquarium with fish and bubbles"
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (- (window-width win) 2))
+      (setq matrix-width (- (window-width win) 3))  ; Account for padding + border
       (setq matrix-height (- (window-height win) 1))))
   ;; Create fish with random positions and directions
   (setq aquarium-fishes

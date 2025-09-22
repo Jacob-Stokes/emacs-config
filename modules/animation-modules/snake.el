@@ -20,7 +20,7 @@
   ;; Get actual window dimensions if buffer is displayed
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (max 30 (- (window-width win) 2)))
+      (setq matrix-width (max 30 (- (window-width win) 3)))  ; Account for padding
       (setq matrix-height (max 15 (- (window-height win) 1)))))
 
   ;; Initialize snake in center
@@ -131,7 +131,7 @@
         ;; Ensure proper window sizing
         (let ((win (get-buffer-window matrix-rain-buffer)))
           (when win
-            (setq matrix-width (max 30 (- (window-width win) 2)))
+            (setq matrix-width (max 30 (- (window-width win) 3)))  ; Account for padding
             (setq matrix-height (max 15 (- (window-height win) 1)))))
 
         ;; AI control

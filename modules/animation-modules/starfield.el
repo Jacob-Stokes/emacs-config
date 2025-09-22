@@ -20,7 +20,7 @@
   ;; Get actual window dimensions if buffer is displayed
   (let ((win (get-buffer-window matrix-rain-buffer)))
     (when win
-      (setq matrix-width (max 20 (- (window-width win) 2)))    ; Minimum 20 width
+      (setq matrix-width (max 20 (- (window-width win) 3)))    ; Account for padding + border
       (setq matrix-height (max 10 (- (window-height win) 1))))) ; Minimum 10 height
 
   ;; Create stars at random positions
@@ -45,7 +45,7 @@
         ;; Ensure proper window sizing
         (let ((win (get-buffer-window matrix-rain-buffer)))
           (when win
-            (setq matrix-width (- (window-width win) 2))
+            (setq matrix-width (- (window-width win) 3))  ; Account for padding
             (setq matrix-height (- (window-height win) 1))))
 
         ;; Create empty grid with exact dimensions
