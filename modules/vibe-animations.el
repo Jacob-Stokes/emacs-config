@@ -68,9 +68,9 @@
              (smiley (nth vibe-animation-smiley-index vibe-animation-smileys)))
         (setq-local mode-line-format
                     (list
-                     ;; Left side - animation name
+                     ;; Left side - animation name (duller gray color)
                      (propertize (format " %s " name)
-                                 'face '(:foreground "#00ff00" :weight bold))
+                                 'face '(:foreground "#888888"))
                      ;; Middle - fill with spaces
                      '(:eval (propertize " " 'display `((space :align-to (- right 3)))))
                      ;; Right side - animated smiley
