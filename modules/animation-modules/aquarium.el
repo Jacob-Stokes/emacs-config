@@ -104,5 +104,12 @@
     (cancel-timer aquarium-timer)
     (setq aquarium-timer nil)))
 
+;; Animation configuration for auto-discovery
+(defvar aquarium-animation-config
+  (list :name "Aquarium"
+        :start-function 'start-aquarium-animation
+        :stop-function 'stop-aquarium-animation)
+  "Configuration for aquarium animation.")
+
 (provide 'aquarium)
 ;;; aquarium.el ends here

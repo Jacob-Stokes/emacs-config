@@ -128,5 +128,12 @@
     (cancel-timer matrix-rain-timer)
     (setq matrix-rain-timer nil)))
 
+;; Animation configuration for auto-discovery
+(defvar matrix-rain-animation-config
+  (list :name "Matrix Rain"
+        :start-function 'start-matrix-rain-animation
+        :stop-function 'stop-matrix-rain-animation)
+  "Configuration for matrix rain animation.")
+
 (provide 'matrix-rain)
 ;;; matrix-rain.el ends here

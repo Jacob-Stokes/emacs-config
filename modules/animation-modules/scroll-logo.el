@@ -101,5 +101,12 @@
     (cancel-timer scroll-logo-timer)
     (setq scroll-logo-timer nil)))
 
+;; Animation configuration for auto-discovery
+(defvar scroll-logo-animation-config
+  (list :name "Scrolling Logo"
+        :start-function 'start-scroll-logo-animation
+        :stop-function 'stop-scroll-logo-animation)
+  "Configuration for scrolling logo animation.")
+
 (provide 'scroll-logo)
 ;;; scroll-logo.el ends here

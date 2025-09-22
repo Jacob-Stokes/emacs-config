@@ -201,5 +201,12 @@
     (cancel-timer snake-timer)
     (setq snake-timer nil)))
 
+;; Animation configuration for auto-discovery
+(defvar snake-animation-config
+  (list :name "Snake Game"
+        :start-function 'start-snake-animation
+        :stop-function 'stop-snake-animation)
+  "Configuration for snake animation.")
+
 (provide 'snake)
 ;;; snake.el ends here

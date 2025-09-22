@@ -91,5 +91,12 @@
     (cancel-timer starfield-timer)
     (setq starfield-timer nil)))
 
+;; Animation configuration for auto-discovery
+(defvar starfield-animation-config
+  (list :name "Starfield"
+        :start-function 'start-starfield-animation
+        :stop-function 'stop-starfield-animation)
+  "Configuration for starfield animation.")
+
 (provide 'starfield)
 ;;; starfield.el ends here
