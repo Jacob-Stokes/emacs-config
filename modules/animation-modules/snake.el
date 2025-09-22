@@ -150,25 +150,19 @@
 
         ;; Draw food
         (when snake-food
-          (let ((pos (+ (* (cdr snake-food) (+ matrix-width 2))
-                        (car snake-food) 2)))  ; Account for padding
-            (when (and (>= pos 1) (<= pos (point-max)))
-              (goto-char pos)
-              (delete-char 1)
-              (insert (propertize "●" 'face '(:foreground "#fd971f"))))))
+          (animation-safe-draw-at (car snake-food) (cdr snake-food)
+                                 "●" '(:foreground "#fd971f")))
 
         ;; Draw snake
         (dolist (segment snake-body)
-          (let ((pos (+ (* (cdr segment) (+ matrix-width 2))
-                        (car segment) 2)))  ; Account for padding
-            (when (and (>= pos 1) (<= pos (point-max)))
-              (goto-char pos)
-              (delete-char 1)
-              (if (eq segment (car snake-body))
-                  ;; Head
-                  (insert (propertize "█" 'face '(:foreground "#00ff00" :weight bold)))
-                ;; Body
-                (insert (propertize "▪" 'face '(:foreground "#48dbfb")))))))
+          (let ((x (car segment))
+                (y (cdr segment)))
+            (animation-safe-draw-at
+             x y
+             (if (eq segment (car snake-body)) "█" "▪")
+             (if (eq segment (car snake-body))
+                 '(:foreground "#00ff00" :weight bold)
+               '(:foreground "#48dbfb")))))
 
         ;; Show score at bottom
         (goto-char (point-max))

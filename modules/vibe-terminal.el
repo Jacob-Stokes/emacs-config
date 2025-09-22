@@ -22,6 +22,26 @@
 (defvar vibe-terminal-header-buffer nil
   "Buffer for terminal header tabs.")
 
+(defvar vibe-terminal-header-window nil
+  "Window displaying terminal header tabs.")
+
+(defvar vibe-terminal-swap-key "C-c a s"
+  "Keybinding string shown in terminal mode-line hints.")
+
+(defun vibe-terminal--mode-line-swap-hint ()
+  "Build right-aligned swap hint for the terminal mode-line."
+  (let ((hint (format "Swap: %s" vibe-terminal-swap-key)))
+    (concat (propertize "" 'display `(space :align-to (- right ,(+ 2 (length hint)))))
+            (propertize hint 'face 'mode-line-emphasis))))
+
+(defun vibe-terminal-apply-mode-line ()
+  "Simplify terminal mode-line and append swap reminder."
+  (setq mode-line-format
+        '(" " mode-line-buffer-identification
+          (:eval (vibe-terminal--mode-line-swap-hint)))))
+
+(add-hook 'term-mode-hook #'vibe-terminal-apply-mode-line)
+
 ;; Terminal sorting function
 (defun vibe-sort-terminals-with-order (terminals order-list)
   "Sort TERMINALS using ORDER-LIST, with unlisted terminals alphabetical at end."
@@ -199,7 +219,8 @@
       (switch-to-buffer vibe-terminal-header-buffer)
       (let ((header-window (selected-window)))
         (set-window-dedicated-p header-window t)
-        (set-window-parameter header-window 'no-other-window t))
+        (set-window-parameter header-window 'no-other-window t)
+        (setq vibe-terminal-header-window header-window))
       (split-window-vertically 2)  ; Small window for header
       (other-window 1)
 

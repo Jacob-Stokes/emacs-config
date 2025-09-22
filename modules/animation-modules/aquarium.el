@@ -50,15 +50,13 @@
           ;; Move fish
           (plist-put fish :x (+ x dir))
           ;; Reverse direction at edges (keep within drawable area)
-          (when (or (<= (plist-get fish :x) 1)  ; Don't go into left padding
-                    (>= (plist-get fish :x) (- matrix-width (length type) 1)))  ; Don't go into right edge
+          (when (or (<= (plist-get fish :x) 0)  ; Hit left edge
+                    (>= (plist-get fish :x) (- matrix-width (length type))))  ; Hit right edge
             (plist-put fish :dir (- dir)))
-          ;; Draw fish at position
-          (when (and (>= y 0) (< y matrix-height)
-                     (>= x 0) (< x matrix-width))
-            (goto-char (+ (* y (+ matrix-width 2)) x 2))  ; +2 for left padding and newline
-            (delete-char (length type))
-            (insert (propertize type 'face '(:foreground "orange"))))))
+          ;; Draw fish using safe function
+          (let ((fish-x (plist-get fish :x)))
+            (when (and (> fish-x 0) (< (+ fish-x (length type)) matrix-width))
+              (animation-safe-draw-at fish-x y type '(:foreground "orange"))))))
       ;; Draw bubbles
       (dolist (bubble aquarium-bubbles)
         (let ((x (plist-get bubble :x))
@@ -68,13 +66,9 @@
           ;; Reset bubble at bottom when it reaches top
           (when (< (plist-get bubble :y) 0)
             (plist-put bubble :y (- matrix-height 1))
-            (plist-put bubble :x (random matrix-width)))
-          ;; Draw bubble
-          (when (and (>= y 0) (< y matrix-height)
-                     (>= x 0) (< x matrix-width))
-            (goto-char (+ (* y (+ matrix-width 2)) x 2))  ; +2 for left padding and newline
-            (delete-char 1)
-            (insert (propertize "o" 'face '(:foreground "cyan"))))))
+            (plist-put bubble :x (+ 1 (random (- matrix-width 2)))))  ; Keep away from edges
+          ;; Draw bubble using safe function
+          (animation-safe-draw-at x y "o" '(:foreground "cyan"))))
       ;; Animation complete
       (read-only-mode 1))))
 

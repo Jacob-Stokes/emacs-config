@@ -59,26 +59,26 @@
                      (color (nth (mod (+ scroll-logo-color-index line-idx)
                                      (length scroll-logo-colors))
                                 scroll-logo-colors)))
-                (when (and (>= target-row 0) (< target-row matrix-height))
-                  ;; Position cursor at the target row (accounting for padding)
-                  (goto-char (1+ (* target-row (+ matrix-width 2))))  ; +2 for padding + newline
-                  (when (> logo-x 0)
-                    (forward-char (min logo-x matrix-width)))  ; Stay within bounds
-
+                (when (and (>= target-row 0) (< target-row matrix-height) logo-line)
                   ;; Draw visible portion of logo line
-                  (let* ((logo-line-len (length logo-line))
-                         (start-char (max 0 (- logo-x)))
-                         (end-char (min logo-line-len (+ start-char (- matrix-width (max 0 logo-x))))))
-                    (when (and (< start-char end-char)
-                               (>= start-char 0)
-                               (<= start-char logo-line-len)
-                               (>= end-char 0)
-                               (<= end-char logo-line-len))
-                      (let ((visible-text (substring logo-line start-char end-char)))
-                        (delete-region (point) (min (+ (point) (length visible-text))
-                                                   (line-end-position)))
-                        (insert (propertize visible-text
-                                           'face `(:foreground ,color :weight bold))))))))))
+                  (let* ((logo-len (length logo-line))
+                         (visible-start (if (< logo-x 0)
+                                          (min (abs logo-x) logo-len)
+                                        0))
+                         (visible-x (max 0 logo-x))
+                         (visible-text (cond
+                                       ((>= visible-start logo-len) "")  ; Logo completely off-screen
+                                       ((< logo-x 0)
+                                        ;; Logo is partially off left side
+                                        (substring logo-line visible-start))
+                                       (t
+                                        ;; Logo is fully or partially visible
+                                        logo-line))))
+                    ;; Use safe drawing function
+                    (when (> (length visible-text) 0)
+                      (animation-safe-draw-at visible-x target-row
+                                            visible-text
+                                            `(:foreground ,color :weight bold))))))))
 
           ;; Update position and color cycling
           (setq scroll-logo-position (mod (+ scroll-logo-position 2) scroll-range))

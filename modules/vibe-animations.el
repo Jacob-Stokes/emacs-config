@@ -45,6 +45,36 @@
 (defvaralias 'matrix-width 'animation-width)
 (defvaralias 'matrix-height 'animation-height)
 
+;; Safe drawing helpers for all animations
+(defun animation-safe-goto-xy (x y)
+  "Safely position cursor at X, Y considering padding.
+Returns t if position is valid, nil otherwise."
+  (when (and (>= x 0) (< x matrix-width)
+             (>= y 0) (< y matrix-height))
+    (let ((pos (+ (* y (+ matrix-width 2)) x 2))) ; +2 for left padding " "
+      (when (and (>= pos 1) (<= pos (point-max)))
+        (goto-char pos)
+        t))))
+
+(defun animation-safe-draw-at (x y text face)
+  "Safely draw TEXT at position X, Y with FACE.
+Ensures drawing stays within safe boundaries."
+  (when (and (>= x 0)
+             (>= y 0)
+             (< y matrix-height))
+    ;; Ensure text doesn't exceed right boundary
+    (let* ((max-x-start (- matrix-width (length text)))
+           (safe-x (min x max-x-start))
+           (text-to-draw (if (< safe-x 0)
+                            ;; Text is too long, truncate it
+                            (substring text (- safe-x) (min (length text) matrix-width))
+                          text)))
+      (when (and (>= safe-x 0) (> (length text-to-draw) 0))
+        (when (animation-safe-goto-xy safe-x y)
+          (delete-char (min (length text-to-draw)
+                           (- (line-end-position) (point))))
+          (insert (propertize text-to-draw 'face face)))))))
+
 ;; Timer for updating the mode-line time
 (defvar vibe-animation-time-timer nil
   "Timer for updating the time display.")

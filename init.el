@@ -501,6 +501,7 @@
 
 ;; Store the right pane window for easy reference
 (defvar right-pane-window nil "The window containing the right pane terminals")
+(defvar vibe-main-editor-window nil "Primary editor window in the VS Code layout")
 (defvar right-pane-header-buffer nil "Buffer for right pane tab header")
 
 ;; Function to create/update right pane header
@@ -550,7 +551,8 @@
       (vibe-switch-to-panel vibe-active-panel))
 
     ;; Go back to main window
-    (other-window -1)))
+    (other-window -1)
+    (setq vibe-main-editor-window (selected-window))))
 
 ;; Function to setup VS Code-like layout with multiple terminals
 (defun setup-vscode-layout ()
@@ -604,6 +606,7 @@
       ;; Go back to middle window - need to go through treemacs
       (other-window 1)  ; This should go to treemacs
       (other-window 1)  ; This should go to middle window
+      (setq vibe-main-editor-window (selected-window))
 
       ;; Now split the middle window for bottom terminal
       (let* ((height (window-height))
@@ -628,7 +631,54 @@
       (set-window-parameter (selected-window) 'no-other-window t)
 
       ;; Focus back on top middle editor window
-      (other-window -1))))
+      (other-window -1)
+      (when (window-live-p vibe-main-editor-window)
+        (select-window vibe-main-editor-window)))))
+
+(defun vibe-swap-terminal-and-main ()
+  "Swap positions of the vibe terminal panel and the main editor pane."
+  (interactive)
+  (let ((main-window vibe-main-editor-window)
+        (terminal-window vibe-terminal-window))
+    (cond
+     ((not (window-live-p main-window))
+      (message "Main editor window not available. Run `setup-vscode-layout` first."))
+     ((not (window-live-p terminal-window))
+     (message "Terminal window not available. Run `setup-vscode-layout` first."))
+     (t
+      (let ((header-window (and (boundp 'vibe-terminal-header-window)
+                                (window-live-p vibe-terminal-header-window)
+                                vibe-terminal-header-window)))
+        ;; Remove existing header before swapping to avoid window-state size issues
+        (when header-window
+          (delete-window header-window)
+          (setq vibe-terminal-header-window nil))
+
+        (window-swap-states main-window terminal-window)
+
+        ;; Update cached window references so they follow the buffers
+        (setq vibe-main-editor-window terminal-window)
+        (setq vibe-terminal-window main-window)
+
+        ;; Recreate terminal header above the relocated terminal
+        (when (and (buffer-live-p vibe-terminal-header-buffer)
+                   (window-live-p vibe-terminal-window))
+          (with-selected-window vibe-terminal-window
+            (when (< (window-total-height (selected-window)) 4)
+              (enlarge-window (- 4 (window-total-height (selected-window)))))
+            (let ((new-header (split-window (selected-window) 2 'above)))
+              (set-window-buffer new-header vibe-terminal-header-buffer)
+              (set-window-dedicated-p new-header t)
+              (set-window-parameter new-header 'no-other-window t)
+              (setq vibe-terminal-header-window new-header))
+            (select-window vibe-terminal-window)))
+
+        ;; Refresh header contents and focus the main editor pane
+        (when (fboundp 'vibe-update-terminal-header)
+          (vibe-update-terminal-header))
+        (when (window-live-p vibe-main-editor-window)
+          (select-window vibe-main-editor-window))
+        (message "Swapped terminal and main panels."))))))
 
 ;; Initialize panel system and setup layout on startup
 (add-hook 'emacs-startup-hook
@@ -643,6 +693,8 @@
 
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
+(global-set-key (kbd "C-c w s") 'vibe-swap-terminal-and-main)
+(setq vibe-terminal-swap-key "C-c w s")
 ;; Terminal keybindings now handled by vibe-terminal module
 (global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
 (global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle

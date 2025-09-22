@@ -64,13 +64,9 @@
             (setf (star-x star) 0)
             (setf (star-y star) (random matrix-height)))
 
-          ;; Draw star at position
-          (let ((pos (+ (* (star-y star) (+ matrix-width 2)) (star-x star) 2)))  ; Account for padding
-            (when (and (>= pos 1) (<= pos (point-max)))
-              (goto-char pos)
-              (delete-char 1)
-              (insert (propertize (star-char star)
-                                 'face '(:foreground "white"))))))
+          ;; Draw star using safe function
+          (animation-safe-draw-at (star-x star) (star-y star)
+                                 (star-char star) '(:foreground "white")))
 
         ;; Starfield doesn't show assistant mode indicator
         ;; Just show stars without text

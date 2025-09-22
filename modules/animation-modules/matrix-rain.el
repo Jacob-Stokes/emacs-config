@@ -7,11 +7,10 @@
 
 ;; Matrix rain animation variables
 (defvar matrix-rain-timer nil)
-(defvar matrix-rain-buffer nil)
+;; matrix-rain-buffer is aliased to animation-buffer in vibe-animations.el
 (defvar matrix-columns nil)
 (defvar matrix-chars "01ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜﾝ")
-(defvar matrix-width 20)  ; Width of the matrix display
-(defvar matrix-height 10) ; Height of the matrix display
+;; matrix-width and matrix-height are aliased to animation-width/height in vibe-animations.el
 ;; Assistant mode display removed - cleaner animations
 
 (defun init-matrix-rain ()
