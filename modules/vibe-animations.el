@@ -21,20 +21,29 @@
 (defvar animation-switch-timer nil
   "Timer for automatic animation switching.")
 
-(defvar animation-switch-interval 30
+(defvar animation-switch-interval 5
   "Seconds between animation switches.")
 
-(defvar current-assistant-mode "claude"
-  "Current assistant mode for display.")
-
-(defvar matrix-rain-buffer nil
+;; Shared variables for all animations
+(defvar animation-buffer nil
   "Shared buffer for all animations.")
 
-(defvar matrix-width 80
+(defvar animation-buffer-name "*Animation*"
+  "Name for the animation buffer.")
+
+(defvar animation-width 80
   "Width of animation display.")
 
-(defvar matrix-height 24
+(defvar animation-height 24
   "Height of animation display.")
+
+(defvar current-assistant-mode "claude"
+  "Current assistant mode for display in animations.")
+
+;; Legacy aliases for backward compatibility
+(defvaralias 'matrix-rain-buffer 'animation-buffer)
+(defvaralias 'matrix-width 'animation-width)
+(defvaralias 'matrix-height 'animation-height)
 
 ;; Function to discover animation modules
 (defun vibe-discover-animations ()
@@ -87,9 +96,9 @@
 ;; Create shared animation buffer
 (defun create-animation-buffer ()
   "Create the shared animation buffer."
-  (unless (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
-    (setq matrix-rain-buffer (get-buffer-create "*Animation*"))
-    (with-current-buffer matrix-rain-buffer
+  (unless (and animation-buffer (buffer-live-p animation-buffer))
+    (setq animation-buffer (get-buffer-create animation-buffer-name))
+    (with-current-buffer animation-buffer
       (setq mode-line-format nil)
       (setq cursor-type nil)
       (setq truncate-lines t)
@@ -177,11 +186,6 @@
       (when (fboundp stop-func)
         (funcall stop-func)))))
 
-;; Backward compatibility functions (for init.el)
-(defun start-rainbow-animation ()
-  "Start rainbow animation - backward compatibility."
-  (setq current-animation-mode "rainbow")
-  (switch-animation-mode))
 
 ;; Initialize on load
 (vibe-discover-animations)
