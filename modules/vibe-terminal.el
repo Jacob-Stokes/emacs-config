@@ -25,7 +25,7 @@
 (defvar vibe-terminal-header-window nil
   "Window displaying terminal header tabs.")
 
-(defvar vibe-terminal-swap-key "C-c a s"
+(defvar vibe-terminal-swap-key "C-c w s"
   "Keybinding string shown in terminal mode-line hints.")
 
 (defun vibe-terminal--mode-line-swap-hint ()
