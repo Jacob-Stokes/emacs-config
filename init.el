@@ -7,6 +7,7 @@
 (require 'vibe-animations)
 (require 'vibe-panel)
 (require 'vibe-terminal)
+(require 'vibe-tabs)  ; Custom buffer tabs for main editor window
 
 ;; Package management setup
 (require 'package)
@@ -413,11 +414,67 @@
       (read-only-mode 1))
     buf))
 
-;; Enable tab-bar-mode for tabs
+;; Enable tab-bar-mode for workspace tabs
 (when (fboundp 'tab-bar-mode)
   (tab-bar-mode 1)
   (setq tab-bar-show 1)  ; Always show tab bar
   (setq tab-bar-new-tab-choice "*dashboard*"))  ; Default new tab
+
+;; Configure tab-line-mode for buffer tabs
+(require 'tab-line)
+
+;; Customize tab-line appearance
+(setq tab-line-new-button-show nil)  ; Hide new button
+(setq tab-line-close-button-show t)  ; Show close button
+(setq tab-line-separator " ")        ; Space between tabs
+(setq tab-line-format '(:eval (concat (funcall tab-line-tabs-function) "\n")))  ; Add newline after tabs
+
+;; Custom function to filter buffers for tab-line
+(defun vibe-tab-line-buffer-filter ()
+  "Filter buffers to show only real files in tab-line."
+  (let ((filtered-buffers '()))
+    (dolist (buf (buffer-list))
+      (let ((name (buffer-name buf)))
+        ;; Only include buffers that are actual files
+        (when (and (buffer-file-name buf)  ; Has an associated file
+                   (not (string-match "^\\*" name))  ; Not a special buffer
+                   (not (string-match "^ " name))     ; Not a hidden buffer
+                   (not (string-match "\\*treemacs\\*\\|\\*Treemacs" name))
+                   (not (string-match "terminal\\|Terminal" name))
+                   (not (string-match "\\*scratch\\*\\|\\*Messages\\*" name)))
+          (push buf filtered-buffers))))
+    (reverse filtered-buffers)))
+
+;; Set the buffer filter for tab-line
+(setq tab-line-tabs-function 'vibe-tab-line-buffer-filter)
+
+;; Custom faces for tab-line
+(set-face-attribute 'tab-line nil
+                    :background "unspecified-bg"
+                    :foreground "#888888"
+                    :height 1.0)
+(set-face-attribute 'tab-line-tab nil :background "#2d2d2d" :foreground "#cccccc")
+(set-face-attribute 'tab-line-tab-current nil :background "unspecified-bg" :foreground "#00ff00" :weight 'bold :underline t)
+(set-face-attribute 'tab-line-tab-inactive nil :background "unspecified-bg" :foreground "#666666")
+(set-face-attribute 'tab-line-highlight nil :background "#3e3e3e")
+
+;; Function to enable tab-line only in file buffers
+(defun vibe-enable-tab-line-selectively ()
+  "Enable tab-line-mode only in file buffers."
+  (if (and (not (string-match "^\\*" (buffer-name)))
+           (not (string-match "\\*treemacs\\*\\|\\*Treemacs" (buffer-name)))
+           (not (eq major-mode 'term-mode))
+           (not (eq major-mode 'ansi-term-mode)))
+      (tab-line-mode 1)
+    (tab-line-mode -1)))
+
+;; Add hook to enable tab-line in appropriate buffers
+(add-hook 'after-change-major-mode-hook 'vibe-enable-tab-line-selectively)
+(add-hook 'find-file-hook 'vibe-enable-tab-line-selectively)
+
+;; Keybindings for tab navigation (browser-friendly)
+(global-set-key (kbd "C-c ]") 'tab-line-switch-to-next-tab)     ; Next tab
+(global-set-key (kbd "C-c [") 'tab-line-switch-to-prev-tab)     ; Previous tab
 
 ;; Store the right pane window for easy reference
 (defvar right-pane-window nil "The window containing the right pane terminals")
@@ -567,24 +624,79 @@
 (global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
 (global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle
 (global-set-key (kbd "C-c v z") 'zone)  ; Instant screensaver/boss mode
-;; Smart window cycling that skips Treemacs
-(defun vibe-other-window ()
-  "Cycle through windows, skipping Treemacs."
-  (interactive)
-  (let ((start-window (selected-window))
-        (tried-windows 0)
-        (max-tries 10))
-    (other-window 1)
-    (while (and (< tried-windows max-tries)
-                (string-match "\\*treemacs\\*" (buffer-name)))
-      (other-window 1)
-      (setq tried-windows (1+ tried-windows))
-      (when (eq (selected-window) start-window)
-        (break)))))
+;; Smart window cycling that skips Treemacs and animations
+(defun vibe-other-window (&optional arg)
+  "Cycle through windows, skipping Treemacs and animation panels."
+  (interactive "p")
+  (let ((count (or arg 1)))
+    (dotimes (i (abs count))
+      (let ((start-window (selected-window))
+            (tried-windows 0)
+            (max-tries 10))
+        (other-window (if (< count 0) -1 1))
+        ;; Keep moving until we find a non-special window
+        (while (and (< tried-windows max-tries)
+                    (let ((buf-name (buffer-name)))
+                      (or (string-match "\\*treemacs\\*\\|\\*Treemacs" buf-name)
+                          (string-match "\\*Matrix Rain\\*\\|\\*Animation\\*" buf-name)
+                          (string-match "\\*Panel Tabs\\*\\|\\*Terminal Tabs\\*\\|\\*Buffer Tabs\\*" buf-name))))
+          (other-window (if (< count 0) -1 1))
+          (setq tried-windows (1+ tried-windows))
+          ;; Prevent infinite loop
+          (when (eq (selected-window) start-window)
+            (setq tried-windows max-tries)))))))
 
-(global-set-key (kbd "C-c o") 'vibe-other-window)  ; Cycle through main windows
+(global-set-key (kbd "C-x o") 'vibe-other-window)  ; Override default other-window
 (global-set-key (kbd "M-o") 'ace-window)  ; Quick window jumping
 (global-set-key (kbd "C-x C-b") 'dashboard-refresh-buffer)  ; Quick return to dashboard
+
+;; Advise find-file to always open in main editor window
+(defun vibe-find-file-advice (orig-fun &rest args)
+  "Open files in the main editor window, regardless of current window."
+  (let ((current-window (selected-window))
+        (current-buffer-name (buffer-name))
+        (mode major-mode))
+
+    ;; Check if we're in a special window (terminal, treemacs, etc)
+    (if (or (string-match "\\*treemacs\\*\\|Treemacs" current-buffer-name)
+            (eq mode 'term-mode)
+            (eq mode 'ansi-term-mode)
+            (eq mode 'eshell-mode)
+            (eq mode 'shell-mode)
+            (string-match "terminal\\|docker-\\|Matrix Rain\\|Animation\\|Panel Tabs\\|Terminal Tabs" current-buffer-name)
+            (string-match "^\\*" current-buffer-name))
+
+        ;; We're in a special window, find the main editor window
+        (let ((main-window nil)
+              (windows (window-list)))
+
+          ;; Look for a window with a normal file buffer or dashboard
+          (dolist (win windows)
+            (with-selected-window win
+              (unless (or (string-match "\\*treemacs\\*\\|Treemacs" (buffer-name))
+                         (eq major-mode 'term-mode)
+                         (eq major-mode 'ansi-term-mode)
+                         (eq major-mode 'eshell-mode)
+                         (eq major-mode 'shell-mode)
+                         (string-match "terminal\\|docker-\\|Matrix Rain\\|Animation\\|Panel Tabs\\|Terminal Tabs" (buffer-name))
+                         ;; Allow dashboard and non-special buffers
+                         (and (string-match "^\\*" (buffer-name))
+                              (not (string-match "\\*dashboard\\*\\|\\*scratch\\*" (buffer-name)))))
+                (setq main-window win))))
+
+          ;; Switch to main window and open file there
+          (if main-window
+              (progn
+                (select-window main-window)
+                (apply orig-fun args)
+                (message "Opened file in main editor window"))
+            ;; No suitable window found, use current
+            (apply orig-fun args)))
+
+      ;; Already in a good window, just open normally
+      (apply orig-fun args))))
+
+(advice-add 'find-file :around #'vibe-find-file-advice)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
