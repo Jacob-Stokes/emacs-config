@@ -42,21 +42,9 @@
 (defvaralias 'matrix-width 'animation-width)
 (defvaralias 'matrix-height 'animation-height)
 
-;; Animated smiley faces for mode-line
-(defvar vibe-animation-smileys '("😊" "😄" "😃" "😀" "🙂" "😌" "😎" "🤗")
-  "List of smiley faces to cycle through.")
-
-(defvar vibe-animation-smiley-index 0
-  "Current index in the smiley animation.")
-
-(defvar vibe-animation-smiley-timer nil
-  "Timer for animating the smiley.")
-
-(defun vibe-animation-next-smiley ()
-  "Get the next smiley in the animation."
-  (setq vibe-animation-smiley-index
-        (mod (1+ vibe-animation-smiley-index) (length vibe-animation-smileys)))
-  (nth vibe-animation-smiley-index vibe-animation-smileys))
+;; Timer for updating the mode-line time
+(defvar vibe-animation-time-timer nil
+  "Timer for updating the time display.")
 
 (defun vibe-animation-update-mode-line ()
   "Update the mode-line for the animation buffer."
@@ -64,18 +52,17 @@
     (with-current-buffer animation-buffer
       (let* ((anim (assoc current-animation-mode vibe-animations))
              (config (cdr anim))
-             (name (or (plist-get config :name) current-animation-mode))
-             (smiley (nth vibe-animation-smiley-index vibe-animation-smileys)))
+             (name (or (plist-get config :name) current-animation-mode)))
         (setq-local mode-line-format
                     (list
                      ;; Left side - animation name (darker gray color)
                      (propertize (format " %s " name)
                                  'face '(:foreground "#555555"))
                      ;; Middle - fill with spaces
-                     '(:eval (propertize " " 'display `((space :align-to (- right 3)))))
-                     ;; Right side - animated smiley
-                     (propertize (format "%s " smiley)
-                                 'face '(:height 1.2))))
+                     '(:eval (propertize " " 'display `((space :align-to (- right 15)))))
+                     ;; Right side - current date and time
+                     '(:eval (propertize (format-time-string "%b %d %H:%M ")
+                                         'face '(:foreground "#666666")))))
         (force-mode-line-update)))))
 
 ;; Function to discover animation modules
@@ -192,13 +179,11 @@
     ;; Set up mode-line for first animation
     (vibe-animation-update-mode-line)
 
-    ;; Start smiley animation
-    (when vibe-animation-smiley-timer
-      (cancel-timer vibe-animation-smiley-timer))
-    (setq vibe-animation-smiley-timer
-          (run-with-timer 0.5 0.5 (lambda ()
-                                     (vibe-animation-next-smiley)
-                                     (vibe-animation-update-mode-line)))))
+    ;; Start time update timer (update every minute)
+    (when vibe-animation-time-timer
+      (cancel-timer vibe-animation-time-timer))
+    (setq vibe-animation-time-timer
+          (run-with-timer 60 60 'vibe-animation-update-mode-line)))
 
   ;; Start automatic switching
   (when animation-switch-timer
@@ -212,10 +197,14 @@
   "Stop the animation system."
   (interactive)
 
-  ;; Cancel timer
+  ;; Cancel timers
   (when animation-switch-timer
     (cancel-timer animation-switch-timer)
     (setq animation-switch-timer nil))
+
+  (when vibe-animation-time-timer
+    (cancel-timer vibe-animation-time-timer)
+    (setq vibe-animation-time-timer nil))
 
   ;; Stop current animation
   (when current-animation-mode
