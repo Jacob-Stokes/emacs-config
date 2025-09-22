@@ -6,7 +6,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'matrix-rain)  ; For shared buffer
 
 ;; Snake animation variables
 (defvar snake-timer nil)

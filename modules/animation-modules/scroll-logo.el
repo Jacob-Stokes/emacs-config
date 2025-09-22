@@ -5,7 +5,7 @@
 
 ;;; Code:
 
-(require 'matrix-rain)  ; For shared buffer
+;; Animation uses shared buffer from vibe-animations
 
 ;; Scrolling logo animation variables
 (defvar scroll-logo-timer nil)

@@ -6,7 +6,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'matrix-rain)  ; For shared buffer
 
 ;; Starfield animation variables
 (defvar starfield-timer nil)

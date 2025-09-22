@@ -5,8 +5,7 @@
 
 ;;; Code:
 
-;; Need matrix-rain for shared buffer and dimensions
-(require 'matrix-rain)
+;; Animation uses shared buffer from vibe-animations
 
 ;; Aquarium animation variables
 (defvar aquarium-timer nil)

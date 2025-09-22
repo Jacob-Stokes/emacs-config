@@ -55,26 +55,18 @@
     (when (file-exists-p order-file)
       (load order-file nil t)))
 
-  ;; First, always load matrix-rain.el since other animations depend on it
-  (let ((matrix-file (expand-file-name "matrix-rain.el" animation-modules-dir)))
-    (when (file-exists-p matrix-file)
-      (load matrix-file nil t)))
-
   ;; Discover all animation modules
   (dolist (file (directory-files animation-modules-dir t "\\.el$"))
     (let ((module-name (file-name-sans-extension (file-name-nondirectory file))))
-      (unless (or (string= module-name "order")
-                  (string= module-name "matrix-rain")) ; Already loaded
-        ;; Load the module
-        (load file nil t))
-
-      ;; Look for animation config (including matrix-rain)
       (unless (string= module-name "order")
+        ;; Load the module
+        (load file nil t)
+
+        ;; Look for animation config
         (let ((config-var (intern (format "%s-animation-config" module-name))))
           (when (boundp config-var)
             (let ((config (symbol-value config-var)))
-              (unless (assoc module-name vibe-animations) ; Avoid duplicates
-                (push (cons module-name config) vibe-animations))))))))
+              (push (cons module-name config) vibe-animations)))))))
 
   ;; Sort animations according to vibe-animation-cycle if defined
   (when (boundp 'vibe-animation-cycle)
