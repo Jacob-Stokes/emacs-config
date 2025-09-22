@@ -36,11 +36,11 @@
             (setq matrix-width (max 80 (- (window-width win) 3)))  ; Account for padding
             (setq matrix-height (max 15 (- (window-height win) 1)))))
 
-        ;; Calculate logo positioning
+        ;; Calculate logo positioning for smooth wrapping
         (let* ((logo-width 65)  ; Width of VIBEMACS logo
                (logo-height 6)   ; Height of VIBEMACS logo
-               (scroll-range (+ matrix-width logo-width))
-               (logo-x (mod scroll-logo-position scroll-range))
+               (scroll-range (+ matrix-width logo-width 10))  ; Add gap before wrapping
+               (logo-x (- (mod scroll-logo-position scroll-range) logo-width 5))  ; Start off-screen
                (logo-start-y (max 0 (/ (- matrix-height logo-height) 2))))  ; Center vertically
 
           ;; Create empty grid
@@ -62,7 +62,8 @@
                 (when (and (>= target-row 0) (< target-row matrix-height))
                   ;; Position cursor at the target row (accounting for padding)
                   (goto-char (1+ (* target-row (+ matrix-width 2))))  ; +2 for padding + newline
-                  (forward-char (max 0 (+ logo-x 1)))  ; +1 for left padding
+                  (when (> logo-x 0)
+                    (forward-char (min logo-x matrix-width)))  ; Stay within bounds
 
                   ;; Draw visible portion of logo line
                   (let* ((logo-line-len (length logo-line))

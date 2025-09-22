@@ -49,9 +49,9 @@
               (type (plist-get fish :type)))
           ;; Move fish
           (plist-put fish :x (+ x dir))
-          ;; Reverse direction at edges
-          (when (or (<= (plist-get fish :x) 0)
-                    (>= (plist-get fish :x) (- matrix-width (length type))))
+          ;; Reverse direction at edges (keep within drawable area)
+          (when (or (<= (plist-get fish :x) 1)  ; Don't go into left padding
+                    (>= (plist-get fish :x) (- matrix-width (length type) 1)))  ; Don't go into right edge
             (plist-put fish :dir (- dir)))
           ;; Draw fish at position
           (when (and (>= y 0) (< y matrix-height)
