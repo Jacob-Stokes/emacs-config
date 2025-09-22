@@ -69,8 +69,7 @@ optionally :startup (function used during automatic startup application)."
 
 (defun vibe-layout--ensure-discovered ()
   "Load all layout modules from `vibe-layout-directory`."
-  (when (and (file-directory-p vibe-layout-directory)
-             (null vibe-layout-definitions))
+  (when (file-directory-p vibe-layout-directory)
     (dolist (file (directory-files vibe-layout-directory nil "\\.el$"))
       (require (intern (file-name-sans-extension file))))))
 
@@ -91,6 +90,7 @@ optionally :startup (function used during automatic startup application)."
   "Apply VibEmacs LAYOUT (symbol)."
   (interactive
    (list (vibe-layout--read-layout "Apply layout")))
+  (vibe-layout--ensure-discovered)
   (let ((entry (vibe-layout--entry layout)))
     (unless entry
       (user-error "Unknown layout: %s" layout))
@@ -107,6 +107,7 @@ When FORCE-DEFAULT is non-nil, apply `vibe-layout-default` instead."
                   (or vibe-current-layout vibe-layout-default))))
     (unless layout
       (user-error "No layout configured"))
+    (vibe-layout--ensure-discovered)
     (vibe-layout-apply layout)))
 
 (defun vibe-layout-switch ()
@@ -162,6 +163,7 @@ When FORCE-DEFAULT is non-nil, apply `vibe-layout-default` instead."
   "Apply the default layout after startup when configured to do so."
   (remove-hook 'emacs-startup-hook #'vibe-layout--maybe-apply-default)
   (when (and vibe-layout-apply-default-on-startup vibe-layout-default)
+    (vibe-layout--ensure-discovered)
     (let ((entry (vibe-layout--entry vibe-layout-default)))
       (when entry
         (let ((startup-fn (plist-get (cdr entry) :startup)))

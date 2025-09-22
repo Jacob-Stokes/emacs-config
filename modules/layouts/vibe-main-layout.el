@@ -92,36 +92,37 @@
 (defun vibe-main-layout--build (preferred-buffer)
   "Construct the full VS Code-style layout.
 PREFERRED-BUFFER is restored in the main editor window when possible."
-  (setq preferred-buffer
-        (when (and preferred-buffer
-                   (vibe-main-layout--valid-editor-buffer-p preferred-buffer))
-          preferred-buffer))
-  (let ((treemacs-window (and (fboundp 'treemacs-get-local-window)
-                              (treemacs-get-local-window))))
+  (let* ((preferred-buffer (and preferred-buffer
+                                (vibe-main-layout--valid-editor-buffer-p preferred-buffer)
+                                preferred-buffer))
+         (fallback-buffer (or preferred-buffer
+                               (vibe-main-layout--maybe-current-buffer)
+                               (get-buffer-create "*scratch*")))
+         (treemacs-window (and (fboundp 'treemacs-get-local-window)
+                               (treemacs-get-local-window))))
     (when (and treemacs-window (eq (selected-window) treemacs-window))
       ;; Prevent toggling treemacs off when rebuilding from its window.
-      (when preferred-buffer
-        (switch-to-buffer preferred-buffer))))
-  (setq right-pane-window nil
-        vibe-panel-window nil
-        vibe-main-editor-window nil)
-  (delete-other-windows)
-  (treemacs)
-  (other-window 1)
-  (cond
-   ((and preferred-buffer
-         (vibe-main-layout--valid-editor-buffer-p preferred-buffer))
-    (switch-to-buffer preferred-buffer))
-   ((fboundp 'dashboard-refresh-buffer)
-    (dashboard-refresh-buffer))
-   (t
-    (switch-to-buffer "*scratch*")))
-  (start-rainbow-animation)
-  (start-animation-system)
-  (vibe-main-layout--configure-right-pane)
-  (vibe-main-layout--configure-bottom-pane)
-  (when (window-live-p vibe-main-editor-window)
-    (select-window vibe-main-editor-window)))
+      (switch-to-buffer fallback-buffer))
+    (setq right-pane-window nil
+          vibe-panel-window nil
+          vibe-main-editor-window nil)
+    (delete-other-windows)
+    (treemacs)
+    (other-window 1)
+    (cond
+     ((and preferred-buffer
+           (vibe-main-layout--valid-editor-buffer-p preferred-buffer))
+      (switch-to-buffer preferred-buffer))
+     ((fboundp 'dashboard-refresh-buffer)
+      (dashboard-refresh-buffer))
+     (t
+      (switch-to-buffer fallback-buffer)))
+    (start-rainbow-animation)
+    (start-animation-system)
+    (vibe-main-layout--configure-right-pane)
+    (vibe-main-layout--configure-bottom-pane)
+    (when (window-live-p vibe-main-editor-window)
+      (select-window vibe-main-editor-window))))
 
 (defun vibe-main-layout--ensure-setup ()
   "Install global helpers used by the main layout."
