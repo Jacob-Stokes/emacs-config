@@ -42,6 +42,42 @@
 (defvaralias 'matrix-width 'animation-width)
 (defvaralias 'matrix-height 'animation-height)
 
+;; Animated smiley faces for mode-line
+(defvar vibe-animation-smileys '("😊" "😄" "😃" "😀" "🙂" "😌" "😎" "🤗")
+  "List of smiley faces to cycle through.")
+
+(defvar vibe-animation-smiley-index 0
+  "Current index in the smiley animation.")
+
+(defvar vibe-animation-smiley-timer nil
+  "Timer for animating the smiley.")
+
+(defun vibe-animation-next-smiley ()
+  "Get the next smiley in the animation."
+  (setq vibe-animation-smiley-index
+        (mod (1+ vibe-animation-smiley-index) (length vibe-animation-smileys)))
+  (nth vibe-animation-smiley-index vibe-animation-smileys))
+
+(defun vibe-animation-update-mode-line ()
+  "Update the mode-line for the animation buffer."
+  (when (and animation-buffer (buffer-live-p animation-buffer))
+    (with-current-buffer animation-buffer
+      (let* ((anim (assoc current-animation-mode vibe-animations))
+             (config (cdr anim))
+             (name (or (plist-get config :name) current-animation-mode))
+             (smiley (nth vibe-animation-smiley-index vibe-animation-smileys)))
+        (setq-local mode-line-format
+                    (list
+                     ;; Left side - animation name
+                     (propertize (format " %s " name)
+                                 'face '(:foreground "#00ff00" :weight bold))
+                     ;; Middle - fill with spaces
+                     '(:eval (propertize " " 'display `((space :align-to (- right 3)))))
+                     ;; Right side - animated smiley
+                     (propertize (format "%s " smiley)
+                                 'face '(:height 1.2))))
+        (force-mode-line-update)))))
+
 ;; Function to discover animation modules
 (defun vibe-discover-animations ()
   "Discover and load all animation modules."
@@ -88,7 +124,7 @@
   (unless (and animation-buffer (buffer-live-p animation-buffer))
     (setq animation-buffer (get-buffer-create animation-buffer-name))
     (with-current-buffer animation-buffer
-      ;; Keep mode-line for status bar
+      ;; Keep default mode-line until we set custom one
       (setq cursor-type nil)
       (setq truncate-lines t)
       (setq buffer-read-only t))))
@@ -128,7 +164,10 @@
     (when (fboundp start-func)
       (condition-case err
           (funcall start-func)
-        (error (message "Error starting animation %s: %s" current-animation-mode err))))))
+        (error (message "Error starting animation %s: %s" current-animation-mode err)))))
+
+  ;; Update mode-line for new animation
+  (vibe-animation-update-mode-line))
 
 ;; Start animation system
 (defun start-animation-system ()
@@ -148,7 +187,18 @@
            (config (cdr anim))
            (start-func (plist-get config :start-function)))
       (when (fboundp start-func)
-        (funcall start-func))))
+        (funcall start-func)))
+
+    ;; Set up mode-line for first animation
+    (vibe-animation-update-mode-line)
+
+    ;; Start smiley animation
+    (when vibe-animation-smiley-timer
+      (cancel-timer vibe-animation-smiley-timer))
+    (setq vibe-animation-smiley-timer
+          (run-with-timer 0.5 0.5 (lambda ()
+                                     (vibe-animation-next-smiley)
+                                     (vibe-animation-update-mode-line)))))
 
   ;; Start automatic switching
   (when animation-switch-timer
