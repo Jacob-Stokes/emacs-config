@@ -103,7 +103,8 @@
           (start-scroll-logo-animation))))
     (error (message "Error starting animation: %s" err)))
 
-  (message "Switched to %s animation" current-animation-mode))
+  ;; Removed annoying message - animation switches silently
+  )
 
 (defun start-animation-switcher ()
   "Start automatic animation switching"

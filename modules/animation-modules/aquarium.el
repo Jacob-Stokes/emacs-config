@@ -38,6 +38,7 @@
       (erase-buffer)
       ;; Draw water background
       (dotimes (y matrix-height)
+        (insert " ")  ; Add left padding
         (dotimes (x matrix-width)
           (insert (if (= (random 20) 0) "~" " ")))
         (insert "\n"))

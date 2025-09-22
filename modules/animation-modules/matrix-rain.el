@@ -87,6 +87,7 @@
         ;; Display the matrix
         (dotimes (y matrix-height)
           (let ((line (aref display y)))
+            (insert " ")  ; Add left padding
             (dotimes (x matrix-width)
               (let* ((char (aref line x))
                      (col-data (aref matrix-columns x))

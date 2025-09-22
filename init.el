@@ -6,6 +6,7 @@
 ;; Load modules
 (require 'vibe-animations)
 (require 'vibe-panel)
+(require 'vibe-terminal)
 
 ;; Package management setup
 (require 'package)
@@ -158,7 +159,7 @@
     (define-key treemacs-mode-map (kbd "C-c o") 'other-window))
   :bind
   (:map global-map
-        ("C-c v t"   . treemacs-select-window)  ; Easy access to treemacs
+        ("C-c T"     . treemacs-select-window)  ; Changed from C-c v t to avoid conflict
         ("C-x t t"   . treemacs)
         ("C-x t d"   . treemacs-select-directory)
         ("C-x t B"   . treemacs-bookmark)
@@ -187,12 +188,12 @@
   (setq company-idle-delay 0.2
         company-minimum-prefix-length 1))
 
-;; Which-key - Shows available keybindings
-(use-package which-key
-  :init (which-key-mode)
-  :diminish which-key-mode
-  :config
-  (setq which-key-idle-delay 0.5))
+;; Which-key - Shows available keybindings (DISABLED)
+;; (use-package which-key
+;;   :init (which-key-mode)
+;;   :diminish which-key-mode
+;;   :config
+;;   (setq which-key-idle-delay 0.5))
 
 ;; VIBE FEATURES
 
@@ -268,7 +269,7 @@
   ;; Override the banner with our VIBEMACS logo
   (defun dashboard-insert-custom-banner ()
     "Insert our custom VIBEMACS banner with rainbow effect"
-    (insert "\n")
+    (insert "\n\n\n")
     (dashboard-insert-center
      "██╗   ██╗██╗██████╗ ███████╗███╗   ███╗ █████╗  ██████╗███████╗\n"
      "██║   ██║██║██╔══██╗██╔════╝████╗ ████║██╔══██╗██╔════╝██╔════╝\n"
@@ -373,6 +374,7 @@
       (insert "  Quick Keys:\n")
       (insert "  ─────────────────────────────────────────────────────────────\n")
       (insert "    C-x t t     Open/Close file tree (Treemacs)\n")
+      (insert "    C-c T       Quick jump to Treemacs window\n")
       (insert "    C-x C-f     Open file\n")
       (insert "    C-x b       Switch buffer\n")
       (insert "    C-x 3       Split vertically\n")
@@ -396,9 +398,10 @@
       (insert "  Terminal:\n")
       (insert "  ─────────────────────────────────────────────────────────────\n")
       (insert "    Type 'claude' in terminal to start Claude\n")
-      (insert "    C-c C-t     New terminal in split\n")
-      (insert "    C-c c       Switch right pane to Claude terminal\n")
-      (insert "    C-c g       Switch right pane to GPT terminal\n\n")
+      (insert "    C-c a m     Main terminal\n")
+      (insert "    C-c a s     Shell terminal\n")
+      (insert "    C-c a e     EShell terminal\n")
+      (insert "    C-c a d     Docker container manager\n\n")
       (insert "  Vibe Features:\n")
       (insert "  ─────────────────────────────────────────────────────────────\n")
       (insert "    M-x fireplace        Start cozy fireplace\n")
@@ -418,11 +421,7 @@
 
 ;; Store the right pane window for easy reference
 (defvar right-pane-window nil "The window containing the right pane terminals")
-(defvar claude-terminal-buffer nil "Buffer for Claude terminal")
-(defvar gpt-terminal-buffer nil "Buffer for GPT terminal")
-(defvar gemini-terminal-buffer nil "Buffer for Gemini terminal")
 (defvar right-pane-header-buffer nil "Buffer for right pane tab header")
-(defvar right-pane-active-terminal "claude" "Currently active terminal in right pane")
 
 ;; Function to create/update right pane header
 ;; Note: Right pane header now handled by vibe-update-panel-header in vibe-panel.el
@@ -528,7 +527,7 @@
 
       ;; Now split the middle window for bottom terminal
       (let* ((height (window-height))
-             (editor-height (floor (* height 0.8))))  ; 80% for editor, 20% for terminal
+             (editor-height (floor (* height 0.75))))  ; 75% for editor, 25% for terminal
         (split-window-vertically editor-height))
 
       (other-window 1)
@@ -536,8 +535,9 @@
       ;; Split bottom area horizontally - left for terminal, right for ASCII face
       (split-window-horizontally (floor (* (window-width) 0.7)))
 
-      ;; Open standard terminal at bottom left
-      (ansi-term "/bin/bash" "bottom-terminal")
+      ;; Initialize and create terminal window
+      (vibe-initialize-terminal-system)
+      (vibe-create-terminal-window (selected-window))
 
       ;; Move to bottom right for animation display
       (other-window 1)
@@ -563,7 +563,7 @@
 
 ;; Custom keybindings
 (global-set-key (kbd "C-c l") 'setup-vscode-layout)
-(global-set-key (kbd "C-c t") (lambda () (interactive) (ansi-term "/bin/bash")))
+;; Terminal keybindings now handled by vibe-terminal module
 (global-set-key (kbd "C-c f") 'fireplace)  ; Easy fireplace access
 (global-set-key (kbd "C-c i") 'imenu-list-smart-toggle)  ; Easy imenu toggle
 (global-set-key (kbd "C-c v z") 'zone)  ; Instant screensaver/boss mode

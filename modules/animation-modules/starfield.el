@@ -51,6 +51,7 @@
 
         ;; Create empty grid with exact dimensions
         (dotimes (row matrix-height)
+          (insert " ")  ; Add left padding
           (dotimes (col matrix-width)
             (insert " "))
           (when (< row (1- matrix-height))  ; Don't add newline on last row
