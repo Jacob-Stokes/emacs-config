@@ -576,7 +576,7 @@
       (other-window 1)
       (dashboard-refresh-buffer)
       (start-rainbow-animation)  ; Start the rainbow effect for logo
-      (vibe-start-animations)    ; Start the matrix/aquarium animations
+      (start-animation-system)    ; Start the animation system
 
       ;; First split vertically for right column (65% editor, 35% right pane)
       ;; Use negative value to make it proportional
@@ -621,7 +621,7 @@
 
       ;; Move to bottom right for animation display
       (other-window 1)
-      ;; Animation already started by vibe-start-animations above
+      ;; Animation already started by start-animation-system above
       (when (and matrix-rain-buffer (buffer-live-p matrix-rain-buffer))
         (switch-to-buffer matrix-rain-buffer))
       (set-window-dedicated-p (selected-window) t)
