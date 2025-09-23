@@ -122,6 +122,11 @@
   ;; Build a fresh prefix map for C-c b shortcuts.
   (let ((prefix-map (make-sparse-keymap)))
     (define-key global-map (kbd "C-c b") prefix-map)
+
+    ;; Also override the term-raw-map binding to fix conflict in ansi-term
+    (require 'term)
+    (define-key term-raw-map (kbd "C-c b") prefix-map)
+
     (cl-loop for terminal in vibe-terminals
              for index from 1
              for terminal-name = (car terminal)
