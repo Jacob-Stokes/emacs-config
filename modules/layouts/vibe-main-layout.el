@@ -10,6 +10,7 @@
 (require 'vibe-panel)
 (require 'vibe-terminal)
 (require 'vibe-animations)
+(require 'vibe-lockdown)
 
 (declare-function treemacs-get-local-window "treemacs")
 
@@ -122,7 +123,9 @@ PREFERRED-BUFFER is restored in the main editor window when possible."
     (vibe-main-layout--configure-right-pane)
     (vibe-main-layout--configure-bottom-pane)
     (when (window-live-p vibe-main-editor-window)
-      (select-window vibe-main-editor-window))))
+      (select-window vibe-main-editor-window))
+    ;; Enable layout lockdown after setup is complete
+    (run-with-timer 1.0 nil 'vibe-lockdown-enable)))
 
 (defun vibe-main-layout--ensure-setup ()
   "Install global helpers used by the main layout."

@@ -23,6 +23,7 @@
 (require 'vibe-panel)
 (require 'vibe-terminal)
 (require 'vibe-tabs)  ; Custom buffer tabs for main editor window
+(require 'vibe-lockdown)  ; Layout protection system
 (require 'vibe-layout)
 (require 'vibe-welcome)
 
