@@ -74,6 +74,13 @@
       (unless (member (get-buffer "*dashboard*") buffers)
         (setq buffers (cons (get-buffer "*dashboard*") buffers))))
 
+    ;; Include docker management buffers
+    (dolist (docker-buf-name '("*docker-containers*" "*docker-images*"
+                               "*docker-networks*" "*docker-volumes*"))
+      (when (get-buffer docker-buf-name)
+        (unless (member (get-buffer docker-buf-name) buffers)
+          (setq buffers (cons (get-buffer docker-buf-name) buffers)))))
+
     (dolist (buf buffers)
       (let* ((name (buffer-name buf))
              (modified (and (buffer-modified-p buf)

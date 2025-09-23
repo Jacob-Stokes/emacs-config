@@ -311,9 +311,10 @@
   (let ((filtered-buffers '()))
     (dolist (buf (buffer-list))
       (let ((name (buffer-name buf)))
-        ;; Only include buffers that are actual files
-        (when (and (buffer-file-name buf)  ; Has an associated file
-                   (not (string-match "^\\*" name))  ; Not a special buffer
+        ;; Include file buffers and docker management buffers
+        (when (and (or (buffer-file-name buf)  ; Has an associated file
+                       (string-match "\\*docker-" name)  ; Docker management buffers
+                       (string-match "\\*dashboard\\*" name))  ; Dashboard
                    (not (string-match "^ " name))     ; Not a hidden buffer
                    (not (string-match "\\*treemacs\\*\\|\\*Treemacs" name))
                    (not (string-match "terminal\\|Terminal" name))
@@ -344,10 +345,12 @@
                     :background "white"
                     :foreground "black")
 
-;; Function to enable tab-line only in file buffers
+;; Function to enable tab-line only in file buffers and docker buffers
 (defun vibe-enable-tab-line-selectively ()
-  "Enable tab-line-mode only in file buffers."
-  (if (and (not (string-match "^\\*" (buffer-name)))
+  "Enable tab-line-mode only in file buffers and docker management buffers."
+  (if (and (or (not (string-match "^\\*" (buffer-name)))  ; Regular files
+               (string-match "\\*docker-" (buffer-name))  ; Docker buffers
+               (string-match "\\*dashboard\\*" (buffer-name)))  ; Dashboard
            (not (string-match "\\*treemacs\\*\\|\\*Treemacs" (buffer-name)))
            (not (eq major-mode 'term-mode))
            (not (eq major-mode 'ansi-term-mode)))
@@ -361,6 +364,9 @@
 ;; Browser-friendly keybindings for tab navigation
 (global-set-key (kbd "C-c ]") 'tab-line-switch-to-next-tab)     ; Next tab
 (global-set-key (kbd "C-c [") 'tab-line-switch-to-prev-tab)     ; Previous tab
+
+;; Quick restart Emacs
+(global-set-key (kbd "C-c r") 'restart-emacs)
 
 ;; Keybinding to manually switch animation
 (global-set-key (kbd "C-c n") 'switch-animation-mode)

@@ -31,7 +31,30 @@
               (package-refresh-contents))
             (package-install 'docker)
             (require 'docker))
-        (message "Please install docker.el package manually")))))
+        (message "Please install docker.el package manually"))))
+
+  ;; Advice to force all docker buffers to open in main editor panel
+  (when (featurep 'docker)
+    (advice-add 'display-buffer :around #'vibe-docker-display-buffer-advice)))
+
+(defun vibe-docker-display-buffer-advice (orig-fun buffer-or-name &rest args)
+  "Advice to force docker buffers to display in main editor window."
+  (let ((buffer (get-buffer buffer-or-name)))
+    (if (and buffer
+             (string-match "\\*docker" (buffer-name buffer))
+             (boundp 'vibe-main-editor-window)
+             (window-live-p vibe-main-editor-window))
+        ;; Force docker buffers to display in main editor window
+        (progn
+          (set-window-buffer vibe-main-editor-window buffer)
+          (select-window vibe-main-editor-window)
+          ;; Enable tab-line and refresh tabs
+          (with-current-buffer buffer
+            (when (fboundp 'tab-line-mode)
+              (tab-line-mode 1)))
+          vibe-main-editor-window)
+      ;; For non-docker buffers, use original behavior
+      (apply orig-fun buffer-or-name args))))
 
 (defun vibe-docker-setup-terminal ()
   "Set up the Docker terminal buffer."
@@ -42,52 +65,36 @@
           (get-buffer-create "*Docker Manager*"))
     (with-current-buffer vibe-docker-terminal-buffer
       (erase-buffer)
-      (insert (propertize "Docker Management Interface\n"
-                          'face '(:foreground "#0db7ed" :weight bold :height 1.2)))
-      (insert (propertize "════════════════════════════\n\n"
-                          'face '(:foreground "#444444")))
+      (insert (propertize "Docker Manager" 'face '(:foreground "#0db7ed" :weight bold)) "\n")
+      (insert (propertize "══════════════" 'face '(:foreground "#444444")) "\n")
 
-      (insert "Available Commands:\n\n")
-      (insert (propertize "M-x docker" 'face '(:foreground "#00ff00" :weight bold))
-              " - Open Docker main interface\n")
-      (insert (propertize "M-x docker-containers" 'face '(:foreground "#00ff00" :weight bold))
-              " - Manage containers\n")
-      (insert (propertize "M-x docker-images" 'face '(:foreground "#00ff00" :weight bold))
-              " - Manage images\n")
-      (insert (propertize "M-x docker-networks" 'face '(:foreground "#00ff00" :weight bold))
-              " - Manage networks\n")
-      (insert (propertize "M-x docker-volumes" 'face '(:foreground "#00ff00" :weight bold))
-              " - Manage volumes\n\n")
-
-      (insert "Quick Actions:\n")
-      (insert (propertize "[c]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Containers  ")
-      (insert (propertize "[i]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Images  ")
-      (insert (propertize "[n]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Networks  ")
-      (insert (propertize "[v]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Volumes\n")
-      (insert (propertize "[r]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Refresh  ")
-      (insert (propertize "[q]" 'face '(:foreground "#ffff00" :weight bold))
-              " - Quit\n\n")
-
+      ;; Status line (line 3)
       (when (featurep 'docker)
-        (insert (propertize "Status: " 'face '(:weight bold))
-                (propertize "Docker.el package loaded ✓\n" 'face '(:foreground "#00ff00")))
-
-        ;; Try to get docker info
         (condition-case err
-            (let ((containers (ignore-errors (docker-container-names)))
-                  (images (ignore-errors (docker-image-names))))
-              (insert (format "Containers: %s\n"
-                             (if containers (length containers) "Unable to connect")))
-              (insert (format "Images: %s\n"
-                             (if images (length images) "Unable to connect"))))
+            (let* ((containers-output (shell-command-to-string "docker ps --format '{{.Names}}'"))
+                   (containers (length (split-string containers-output "\n" t)))
+                   (images-output (shell-command-to-string "docker images --format '{{.Repository}}'"))
+                   (images (length (split-string images-output "\n" t))))
+              (insert (format "%d containers │ %d images │ " containers images))
+              (insert (propertize "CLI ✓" 'face '(:foreground "#00ff00")) "\n"))
           (error
-           (insert (propertize "Warning: " 'face '(:foreground "#ff6600" :weight bold))
-                   (format "Could not connect to Docker daemon\n")))))
+           (insert (propertize "⚠ Docker daemon error" 'face '(:foreground "#ff6600")) "\n"))))
+
+      ;; Empty line (line 4)
+      (insert "\n")
+
+      ;; Quick actions (lines 5-6)
+      (insert (propertize "[c]" 'face '(:foreground "#ffff00" :weight bold)) " Containers  ")
+      (insert (propertize "[i]" 'face '(:foreground "#ffff00" :weight bold)) " Images\n")
+      (insert (propertize "[n]" 'face '(:foreground "#ffff00" :weight bold)) " Networks   ")
+      (insert (propertize "[v]" 'face '(:foreground "#ffff00" :weight bold)) " Volumes\n")
+
+      ;; Empty line (line 7)
+      (insert "\n")
+
+      ;; Additional actions (line 8)
+      (insert (propertize "[r]" 'face '(:foreground "#ffff00" :weight bold)) " Refresh    ")
+      (insert (propertize "[q]" 'face '(:foreground "#ffff00" :weight bold)) " Quit\n")
 
       ;; Set up local keybindings
       (use-local-map (make-sparse-keymap))
