@@ -132,6 +132,23 @@ PREFERRED-BUFFER is restored in the main editor window when possible."
   (unless vibe-main-layout--initialized
     (advice-add 'find-file :around #'vibe-find-file-advice)
     (global-set-key (kbd "C-c w s") #'vibe-swap-terminal-and-main)
+    (with-eval-after-load 'treemacs
+      (define-key treemacs-mode-map (kbd "C-c w s") #'vibe-swap-terminal-and-main))
+    (with-eval-after-load 'term
+      (when (boundp 'term-mode-map)
+        (define-key term-mode-map (kbd "C-c w s") #'vibe-swap-terminal-and-main))
+      (when (boundp 'term-raw-map)
+        (define-key term-raw-map (kbd "C-c w s") #'vibe-swap-terminal-and-main)))
+    (with-eval-after-load 'comint
+      (when (boundp 'comint-mode-map)
+        (define-key comint-mode-map (kbd "C-c w s") #'vibe-swap-terminal-and-main)))
+    (with-eval-after-load 'eshell
+      (when (boundp 'eshell-mode-map)
+        (define-key eshell-mode-map (kbd "C-c w s") #'vibe-swap-terminal-and-main)))
+    (with-eval-after-load 'shell
+      (when (boundp 'shell-mode-map)
+        (define-key shell-mode-map (kbd "C-c w s") #'vibe-swap-terminal-and-main)))
+    (global-set-key (kbd "C-c w t") (lambda () (interactive) (message "TEST: This keybinding works from %s" (buffer-name))))
     (setq vibe-terminal-swap-key "C-c w s")
     (global-set-key (kbd "C-x o") #'vibe-other-window)
     (global-set-key (kbd "M-o") #'ace-window)
@@ -154,33 +171,20 @@ When PREFERRED-BUFFER is non-nil, display it in the main editor pane."
   (vibe-main-layout--build (or preferred-buffer
                                (vibe-main-layout--maybe-current-buffer))))
 
+
 (defun vibe-swap-terminal-and-main ()
   "Swap positions of the vibe terminal panel and the main editor pane."
   (interactive)
+  (message "SWAP CALLED from buffer: %s" (buffer-name))
   (condition-case err
-      (let* ((main-window (or vibe-main-editor-window
-                              ;; Try to find main editor window dynamically
-                              (cl-find-if
-                               (lambda (w)
-                                 (let ((buf (window-buffer w)))
-                                   (and buf
-                                        (not (string-match "\\*treemacs\\*\\|\\*Treemacs" (buffer-name buf)))
-                                        (not (string-match "\\*Panel Tabs\\*\\|\\*Terminal Tabs\\*\\|\\*Buffer Tabs\\*" (buffer-name buf)))
-                                        (not (string-match "\\*Animation\\*\\|\\*Matrix Rain\\*" (buffer-name buf)))
-                                        (not (eq (buffer-local-value 'major-mode buf) 'term-mode))
-                                        (not (eq (buffer-local-value 'major-mode buf) 'ansi-term-mode)))))
-                               (window-list))))
-             (terminal-window (or vibe-terminal-window
-                                  ;; Try to find terminal window dynamically
-                                  (cl-find-if
-                                   (lambda (w)
-                                     (let ((buf (window-buffer w)))
-                                       (and buf
-                                            (or (eq (buffer-local-value 'major-mode buf) 'term-mode)
-                                                (eq (buffer-local-value 'major-mode buf) 'ansi-term-mode)
-                                                (string-match "\\*.*terminal\\*" (buffer-name buf))))))
-                                   (window-list))))
+      (let* ((main-window vibe-main-editor-window)
+             (terminal-window vibe-terminal-window)
              (lockdown-was-enabled (and (boundp 'vibe-lockdown-enabled) vibe-lockdown-enabled)))
+
+        (message "DEBUG: From buffer %s - Main window: %s (live: %s), Terminal window: %s (live: %s)"
+                 (buffer-name)
+                 main-window (window-live-p main-window)
+                 terminal-window (window-live-p terminal-window))
 
         (cond
          ((not (window-live-p main-window))
@@ -190,53 +194,58 @@ When PREFERRED-BUFFER is non-nil, display it in the main editor pane."
           (message "Terminal window not available (from %s). Run `setup-vscode-layout` first."
                    (if (current-buffer) (buffer-name) "unknown")))
          (t
-          ;; Temporarily disable lockdown to allow window changes
-          (when lockdown-was-enabled
-            (vibe-lockdown-disable))
+          (save-selected-window
+            ;; Anchor layout changes on the main editor column so swaps work even
+            ;; when initiated from side panes.
+            (select-window main-window)
 
-          ;; Safely handle terminal header window - only delete if it's actually a terminal header
-          (let ((header-window (and (boundp 'vibe-terminal-header-window)
-                                    (window-live-p vibe-terminal-header-window)
-                                    vibe-terminal-header-window)))
-            (when header-window
-              ;; Validate this is actually a terminal header before deleting
-              (let ((header-buffer (window-buffer header-window)))
-                (when (and header-buffer
-                           (string-match "\\*Terminal Tabs\\*" (buffer-name header-buffer)))
-                  (delete-window header-window)
-                  (setq vibe-terminal-header-window nil)))))
+            ;; Temporarily disable lockdown to allow window changes
+            (when lockdown-was-enabled
+              (vibe-lockdown-disable))
 
-          ;; Perform the window swap
-          (window-swap-states main-window terminal-window)
+            ;; Safely handle terminal header window - only delete if it's actually a terminal header
+            (let ((header-window (and (boundp 'vibe-terminal-header-window)
+                                      (window-live-p vibe-terminal-header-window)
+                                      vibe-terminal-header-window)))
+              (when header-window
+                ;; Validate this is actually a terminal header before deleting
+                (let ((header-buffer (window-buffer header-window)))
+                  (when (and header-buffer
+                             (string-match "\\*Terminal Tabs\\*" (buffer-name header-buffer)))
+                    (delete-window header-window)
+                    (setq vibe-terminal-header-window nil)))))
 
-          ;; Update window references
-          (setq vibe-main-editor-window terminal-window)
-          (setq vibe-terminal-window main-window)
+            ;; Perform the window swap
+            (window-swap-states main-window terminal-window)
 
-          ;; Recreate terminal header in new location
-          (when (and (boundp 'vibe-terminal-header-buffer)
-                     (buffer-live-p vibe-terminal-header-buffer)
-                     (window-live-p vibe-terminal-window))
-            (with-selected-window vibe-terminal-window
-              (condition-case header-err
-                  (progn
-                    (when (< (window-total-height) 4)
-                      (enlarge-window (- 4 (window-total-height))))
-                    (let ((new-header (split-window nil 2 'above)))
-                      (set-window-buffer new-header vibe-terminal-header-buffer)
-                      (set-window-dedicated-p new-header t)
-                      (set-window-parameter new-header 'no-other-window t)
-                      (setq vibe-terminal-header-window new-header)))
-                (error
-                 (message "Warning: Could not recreate terminal header: %s" header-err)))))
+            ;; Update window references
+            (setq vibe-main-editor-window terminal-window)
+            (setq vibe-terminal-window main-window)
 
-          ;; Update terminal header display
-          (when (fboundp 'vibe-update-terminal-header)
-            (vibe-update-terminal-header))
+            ;; Recreate terminal header in new location
+            (when (and (boundp 'vibe-terminal-header-buffer)
+                       (buffer-live-p vibe-terminal-header-buffer)
+                       (window-live-p vibe-terminal-window))
+              (with-selected-window vibe-terminal-window
+                (condition-case header-err
+                    (progn
+                      (when (< (window-total-height) 4)
+                        (enlarge-window (- 4 (window-total-height))))
+                      (let ((new-header (split-window nil 2 'above)))
+                        (set-window-buffer new-header vibe-terminal-header-buffer)
+                        (set-window-dedicated-p new-header t)
+                        (set-window-parameter new-header 'no-other-window t)
+                        (setq vibe-terminal-header-window new-header)))
+                  (error
+                   (message "Warning: Could not recreate terminal header: %s" header-err)))))
 
-          ;; Re-enable lockdown if it was enabled
-          (when lockdown-was-enabled
-            (run-with-timer 0.5 nil 'vibe-lockdown-enable))
+            ;; Update terminal header display
+            (when (fboundp 'vibe-update-terminal-header)
+              (vibe-update-terminal-header))
+
+            ;; Re-enable lockdown if it was enabled
+            (when lockdown-was-enabled
+              (run-with-timer 0.5 nil 'vibe-lockdown-enable)))
 
           ;; Return to main editor window regardless of where we started
           (when (window-live-p vibe-main-editor-window)
