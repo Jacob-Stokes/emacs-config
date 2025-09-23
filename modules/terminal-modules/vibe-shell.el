@@ -5,6 +5,8 @@
 
 ;;; Code:
 
+(require 'comint)
+
 ;; Terminal metadata
 (defvar vibe-shell-terminal-name "Shell"
   "Display name for this terminal.")
@@ -18,13 +20,26 @@
 (defvar vibe-shell-terminal-buffer nil
   "Buffer for shell terminal.")
 
+(defun vibe-shell--process-alive-p ()
+  "Return non-nil when the shell terminal buffer has a live process."
+  (and vibe-shell-terminal-buffer
+       (buffer-live-p vibe-shell-terminal-buffer)
+       (comint-check-proc vibe-shell-terminal-buffer)))
+
 (defun vibe-shell-setup-terminal ()
-  "Set up the shell terminal."
-  (unless (and vibe-shell-terminal-buffer (buffer-live-p vibe-shell-terminal-buffer))
-    (let ((default-directory "/root/"))
-      (setq vibe-shell-terminal-buffer (get-buffer-create "*vibe-shell-terminal*"))
-      (with-current-buffer vibe-shell-terminal-buffer
-        (shell vibe-shell-terminal-buffer))))
+  "Create the shell terminal buffer without disrupting the current window."
+  (let ((buffer-name "*vibe-shell-terminal*"))
+    (unless (vibe-shell--process-alive-p)
+      (when (and vibe-shell-terminal-buffer
+                 (buffer-live-p vibe-shell-terminal-buffer))
+        (kill-buffer vibe-shell-terminal-buffer))
+      (let ((default-directory (or (and (boundp 'default-directory)
+                                        default-directory)
+                                   "/root/")))
+        (setq vibe-shell-terminal-buffer
+              (save-window-excursion
+                (shell buffer-name)))))
+    (setq vibe-shell-terminal-buffer (get-buffer buffer-name)))
   vibe-shell-terminal-buffer)
 
 (defun vibe-shell-switch-to-terminal ()

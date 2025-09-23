@@ -188,6 +188,12 @@
 (use-package fireplace
   :commands fireplace)
 
+;; Restart-emacs - Restart emacs from within emacs
+(use-package restart-emacs
+  :commands restart-emacs
+  :config
+  (setq restart-emacs-restore-frames t))
+
 ;; Imenu-list - Better than minimap for terminal (shows function list)
 (use-package imenu-list
   :commands imenu-list-smart-toggle
@@ -378,3 +384,14 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:foreground "#E0E0E0"))))
+ '(font-lock-comment-face ((t (:foreground "#75715e"))))
+ '(font-lock-function-name-face ((t (:foreground "#fd971f"))))
+ '(font-lock-keyword-face ((t (:foreground "#66d9ef"))))
+ '(font-lock-string-face ((t (:foreground "#a6e22e"))))
+ '(hl-line ((t (:background "unspecified" :underline t)))))

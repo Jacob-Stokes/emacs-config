@@ -19,12 +19,23 @@
   "Buffer for eshell terminal.")
 
 (defun vibe-eshell-setup-terminal ()
-  "Set up the eshell terminal."
-  (unless (and vibe-eshell-terminal-buffer (buffer-live-p vibe-eshell-terminal-buffer))
-    (let ((default-directory "/root/"))
-      (setq vibe-eshell-terminal-buffer (eshell 99))  ; 99 is just a unique number
-      (with-current-buffer vibe-eshell-terminal-buffer
-        (rename-buffer "*vibe-eshell-terminal*" t))))
+  "Set up the eshell terminal buffer without stealing focus."
+  (let ((buffer-name "*vibe-eshell-terminal*"))
+    (unless (and vibe-eshell-terminal-buffer
+                 (buffer-live-p vibe-eshell-terminal-buffer)
+                 (string= (buffer-name vibe-eshell-terminal-buffer) buffer-name))
+      (when (and vibe-eshell-terminal-buffer
+                 (buffer-live-p vibe-eshell-terminal-buffer))
+        (kill-buffer vibe-eshell-terminal-buffer))
+      (let ((default-directory (or (and (boundp 'default-directory)
+                                        default-directory)
+                                   "/root/")))
+        (setq vibe-eshell-terminal-buffer
+              (save-window-excursion
+                (eshell 99)))
+        (with-current-buffer vibe-eshell-terminal-buffer
+          (rename-buffer buffer-name t))))
+    (setq vibe-eshell-terminal-buffer (get-buffer buffer-name)))
   vibe-eshell-terminal-buffer)
 
 (defun vibe-eshell-switch-to-terminal ()

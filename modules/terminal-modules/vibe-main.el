@@ -19,9 +19,14 @@
   "Buffer for main terminal.")
 
 (defun vibe-main-setup-terminal ()
-  "Set up the main terminal."
-  (unless (and vibe-main-terminal-buffer (buffer-live-p vibe-main-terminal-buffer))
-    (setq vibe-main-terminal-buffer (ansi-term "/bin/bash" "vibe-main-terminal")))
+  "Set up the main terminal buffer without stealing the current window."
+  (unless (and vibe-main-terminal-buffer
+               (buffer-live-p vibe-main-terminal-buffer)
+               (get-buffer-process vibe-main-terminal-buffer))
+    (let ((shell-path (or explicit-shell-file-name "/bin/bash")))
+      (setq vibe-main-terminal-buffer
+            (save-window-excursion
+              (ansi-term shell-path "vibe-main-terminal")))))
   vibe-main-terminal-buffer)
 
 (defun vibe-main-switch-to-terminal ()

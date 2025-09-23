@@ -9,6 +9,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'vibe-animations)  ; For current-assistant-mode
 
 ;; Panel system variables
@@ -89,16 +90,24 @@
              (mapconcat (lambda (p) (plist-get (cdr p) :name)) vibe-panels ", "))))
 
 (defun vibe-setup-panel-keybindings ()
-  "Set up keybindings for all discovered panels."
+  "Set up keybindings for all discovered panels using numeric shortcuts."
+  ;; Clear legacy bindings that used direct C-c X mappings.
   (dolist (panel vibe-panels)
     (let* ((config (cdr panel))
-           (key (plist-get config :key))
-           (switch-func (plist-get config :switch-function)))
-      (when (and key switch-func)
-        (global-set-key (kbd (concat "C-c " key))
-                        `(lambda ()
-                           (interactive)
-                           (vibe-switch-to-panel ,(car panel))))))))
+           (legacy-key (plist-get config :key)))
+      (when legacy-key
+        (global-unset-key (kbd (concat "C-c " legacy-key))))))
+
+  ;; Create prefix map for the new C-c c shortcuts.
+  (let ((prefix-map (make-sparse-keymap)))
+    (define-key global-map (kbd "C-c c") prefix-map)
+    (cl-loop for panel in vibe-panels
+             for index from 1
+             for panel-name = (car panel)
+             do (define-key prefix-map (kbd (number-to-string index))
+                             `(lambda ()
+                                (interactive)
+                                (vibe-switch-to-panel ,panel-name))))))
 
 (defun vibe-create-panel-header ()
   "Create the panel header with tabs showing all panels."
@@ -117,35 +126,31 @@
       (erase-buffer)
       (insert "  ")
 
-      ;; Build tab string dynamically
-      (let ((tab-strings '())
-            (key-strings '()))
-
-        (dolist (panel vibe-panels)
-          (let* ((config (cdr panel))
-                 (name (plist-get config :name))
-                 (key (plist-get config :key))
-                 (color (plist-get config :color))
-                 (is-active (string= (car panel) vibe-active-panel)))
-
-            ;; Create tab display
-            (push (if is-active
-                      (propertize name 'face `(:foreground ,color :weight bold :underline t))
-                    (propertize name 'face '(:foreground "gray")))
-                  tab-strings)
-
-            ;; Collect keybinding for display
-            (when key
-              (push key key-strings))))
+      ;; Build tab string dynamically with numeric labels
+      (let ((tab-strings '()))
+        (cl-loop for panel in vibe-panels
+                 for index from 1
+                 do (let* ((config (cdr panel))
+                           (name (plist-get config :name))
+                           (color (plist-get config :color))
+                           (label (format "(%d) %s" index name))
+                           (is-active (string= (car panel) vibe-active-panel)))
+                      (push (if is-active
+                                (propertize label
+                                            'face `(:foreground ,(or color "#00ff00")
+                                                                :weight bold
+                                                                :underline t))
+                              (propertize label 'face '(:foreground "gray")))
+                            tab-strings)))
 
         ;; Insert tabs separated by |
-        (insert (string-join (reverse tab-strings) " | "))
-        (insert "  ")
+        (when tab-strings
+          (insert (string-join (nreverse tab-strings) " | "))))
 
-        ;; Show keybindings
-        (insert (propertize
-                 (concat "(C-c " (string-join (reverse key-strings) "/") ")")
-                 'face '(:foreground "dark gray" :height 0.9))))
+      (insert "  ")
+
+      ;; Show keybinding hint
+      (insert (propertize "(C-c c [NUM])" 'face '(:foreground "dark gray" :height 0.9)))
 
       (read-only-mode 1))))
 
@@ -175,11 +180,10 @@
               ;; Focus on panel
               (select-window vibe-panel-window)
 
-              (message "Switched to %s panel (%s)"
-                       (plist-get config :name)
-                       (mapconcat (lambda (p)
-                                    (concat "C-c " (plist-get (cdr p) :key) "=" (plist-get (cdr p) :name)))
-                                  (remove panel-entry vibe-panels) ", ")))))))))
+              (let ((panel-index (1+ (or (cl-position panel-entry vibe-panels :test #'eq) -1))))
+                (message "Switched to %s panel (C-c c %d)"
+                         (plist-get config :name)
+                         panel-index)))))))))
 
 (defun vibe-setup-all-panels ()
   "Set up all discovered panels."

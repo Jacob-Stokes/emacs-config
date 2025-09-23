@@ -55,33 +55,24 @@
                       ((eq snake-direction 'up)
                        (cons (car head) (1- (cdr head))))
                       ((eq snake-direction 'down)
-                       (cons (car head) (1+ (cdr head)))))))
-
-      ;; Check wall collision
-      (when (or (< (car new-head) 0)
-                (>= (car new-head) matrix-width)
-                (< (cdr new-head) 0)
-                (>= (cdr new-head) matrix-height))
-        (setq snake-game-over t)
-        (init-snake)  ; Restart game
-        (return-from snake-move))
-
-      ;; Check self collision
-      (when (member new-head snake-body)
-        (setq snake-game-over t)
-        (init-snake)  ; Restart game
-        (return-from snake-move))
-
-      ;; Add new head
-      (push new-head snake-body)
-
-      ;; Check food collision
-      (if (equal new-head snake-food)
+                       (cons (car head) (1+ (cdr head))))))
+           (wall-collision (or (< (car new-head) 0)
+                               (>= (car new-head) matrix-width)
+                               (< (cdr new-head) 0)
+                               (>= (cdr new-head) matrix-height)))
+           (self-collision (member new-head snake-body)))
+      (if (or wall-collision self-collision)
           (progn
-            (setq snake-score (1+ snake-score))
-            (snake-place-food))
-        ;; Remove tail if no food eaten
-        (setq snake-body (butlast snake-body))))))
+            (setq snake-game-over t)
+            (init-snake))  ; Restart game
+        ;; Continue game normally when there is no collision
+        (push new-head snake-body)
+        (if (equal new-head snake-food)
+            (progn
+              (setq snake-score (1+ snake-score))
+              (snake-place-food))
+          ;; Remove tail if no food eaten
+          (setq snake-body (butlast snake-body)))))))
 
 (defun snake-auto-turn ()
   "AI to automatically turn the snake towards food."

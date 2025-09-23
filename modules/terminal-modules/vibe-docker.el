@@ -121,7 +121,7 @@
 
     ;; Move cursor to beginning of buffer
     (goto-char (point-min))
-    buf))
+    (setq vibe-docker-menu-buffer buf)))
 
 (defun vibe-docker-select-by-number (num)
   "Select container by number NUM."
@@ -226,24 +226,41 @@
     (term-send-string (get-buffer-process (current-buffer)) "docker stats\n")))
 
 (defun vibe-docker-setup-terminal ()
-  "Set up the Docker terminal."
-  (vibe-docker-switch-to-terminal))
+  "Set up the Docker terminal without switching buffers."
+  (unless (and vibe-docker-menu-buffer
+               (buffer-live-p vibe-docker-menu-buffer))
+    (vibe-docker-create-container-menu))
+  (when (and vibe-docker-terminal-buffer
+             (not (buffer-live-p vibe-docker-terminal-buffer)))
+    (setq vibe-docker-terminal-buffer nil)
+    (setq vibe-docker-selected-container nil))
+  vibe-docker-menu-buffer)
 
-(defun vibe-docker-switch-to-terminal ()
-  "Switch to Docker terminal or show menu."
-  (interactive)
-  (if vibe-docker-selected-container
-      ;; If we have a selected container, return to its terminal
-      (if (and vibe-docker-terminal-buffer (buffer-live-p vibe-docker-terminal-buffer))
-          vibe-docker-terminal-buffer
-        ;; Container buffer died, go back to menu
-        (progn
-          (setq vibe-docker-selected-container nil)
-          (vibe-docker-create-container-menu)))
-    ;; Otherwise show/create the menu
-    (if (and vibe-docker-menu-buffer (buffer-live-p vibe-docker-menu-buffer))
-        (switch-to-buffer vibe-docker-menu-buffer)
-      (vibe-docker-create-container-menu))))
+(defun vibe-docker--current-buffer ()
+  "Return the buffer that should represent the Docker terminal."
+  (cond
+   ((and vibe-docker-selected-container
+         vibe-docker-terminal-buffer
+         (buffer-live-p vibe-docker-terminal-buffer))
+    vibe-docker-terminal-buffer)
+   ((and vibe-docker-selected-container
+         (not (and vibe-docker-terminal-buffer
+                   (buffer-live-p vibe-docker-terminal-buffer))))
+    ;; Container buffer vanished, reset state and fall back to menu
+    (setq vibe-docker-selected-container nil)
+    (vibe-docker--current-buffer))
+   ((and vibe-docker-menu-buffer (buffer-live-p vibe-docker-menu-buffer))
+    vibe-docker-menu-buffer)
+   (t
+    (vibe-docker-create-container-menu))))
+
+(defun vibe-docker-switch-to-terminal (&optional display)
+  "Return the Docker terminal buffer.  When DISPLAY is non-nil, show it."
+  (interactive "p")
+  (let ((buffer (vibe-docker--current-buffer)))
+    (when (and display buffer)
+      (switch-to-buffer buffer))
+    buffer))
 
 (defun vibe-docker-is-ready-p ()
   "Check if Docker terminal is ready."

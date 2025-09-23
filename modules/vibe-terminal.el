@@ -9,6 +9,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 ;; Terminal system variables
 (defvar vibe-terminals nil
   "List of discovered terminal configurations.")
@@ -109,16 +111,24 @@
              (mapconcat (lambda (t) (plist-get (cdr t) :name)) vibe-terminals ", "))))
 
 (defun vibe-setup-terminal-keybindings ()
-  "Set up keybindings for all discovered terminals."
+  "Set up keybindings for all discovered terminals using numeric shortcuts."
+  ;; Remove legacy keybindings that used the C-c a prefix.
   (dolist (terminal vibe-terminals)
     (let* ((config (cdr terminal))
-           (key (plist-get config :key))
-           (switch-func (plist-get config :switch-function)))
-      (when (and key switch-func)
-        (global-set-key (kbd (concat "C-c a " key))
-                        `(lambda ()
-                           (interactive)
-                           (vibe-switch-to-terminal ,(car terminal))))))))
+           (legacy-key (plist-get config :key)))
+      (when legacy-key
+        (global-unset-key (kbd (concat "C-c a " legacy-key))))))
+
+  ;; Build a fresh prefix map for C-c b shortcuts.
+  (let ((prefix-map (make-sparse-keymap)))
+    (define-key global-map (kbd "C-c b") prefix-map)
+    (cl-loop for terminal in vibe-terminals
+             for index from 1
+             for terminal-name = (car terminal)
+             do (define-key prefix-map (kbd (number-to-string index))
+                             `(lambda ()
+                                (interactive)
+                                (vibe-switch-to-terminal ,terminal-name))))))
 
 (defun vibe-create-terminal-header ()
   "Create the terminal header with tabs showing all terminals."
@@ -138,34 +148,30 @@
       (insert "  ")
 
       ;; Build tab string dynamically
-      (let ((tab-strings '())
-            (key-strings '()))
+      (let ((tab-strings '()))
+        (cl-loop for terminal in vibe-terminals
+                 for index from 1
+                 do (let* ((config (cdr terminal))
+                           (name (plist-get config :name))
+                           (color (plist-get config :color))
+                           (label (format "(%d) %s" index name))
+                           (is-active (string= (car terminal) vibe-active-terminal)))
+                      (push (if is-active
+                                (propertize label
+                                            'face `(:foreground ,(or color "#00ff00")
+                                                                :weight bold
+                                                                :underline t))
+                              (propertize label 'face '(:foreground "gray")))
+                            tab-strings)))
 
-        (dolist (terminal vibe-terminals)
-          (let* ((config (cdr terminal))
-                 (name (plist-get config :name))
-                 (key (plist-get config :key))
-                 (color (plist-get config :color))
-                 (is-active (string= (car terminal) vibe-active-terminal)))
+        ;; Insert tabs separated by | for readability
+        (when tab-strings
+          (insert (string-join (nreverse tab-strings) " | "))))
 
-            ;; Create tab display
-            (push (if is-active
-                      (propertize name 'face `(:foreground ,color :weight bold :underline t))
-                    (propertize name 'face '(:foreground "gray")))
-                  tab-strings)
+      (insert "  ")
 
-            ;; Collect keybinding for display
-            (when key
-              (push (concat "a " key) key-strings))))
-
-        ;; Insert tabs separated by |
-        (insert (string-join (reverse tab-strings) " | "))
-        (insert "  ")
-
-        ;; Show keybindings
-        (insert (propertize
-                 (concat "(C-c " (string-join (reverse key-strings) "/") ")")
-                 'face '(:foreground "dark gray" :height 0.9))))
+      ;; Display keybinding hint
+      (insert (propertize "(C-c b [NUM])" 'face '(:foreground "dark gray" :height 0.9)))
 
       (read-only-mode 1))))
 
