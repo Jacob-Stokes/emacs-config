@@ -231,11 +231,15 @@ When PREFERRED-BUFFER is non-nil, display it in the main editor pane."
                     (progn
                       (when (< (window-total-height) 4)
                         (enlarge-window (- 4 (window-total-height))))
-                      (let ((new-header (split-window nil 2 'above)))
-                        (set-window-buffer new-header vibe-terminal-header-buffer)
-                        (set-window-dedicated-p new-header t)
-                        (set-window-parameter new-header 'no-other-window t)
-                        (setq vibe-terminal-header-window new-header)))
+                      ;; Use same pattern as original: current window becomes header (2 lines), below gets rest
+                      (let ((terminal-content-window (split-window-vertically 2)))
+                        ;; Current window becomes the header
+                        (set-window-buffer (selected-window) vibe-terminal-header-buffer)
+                        (set-window-dedicated-p (selected-window) t)
+                        (set-window-parameter (selected-window) 'no-other-window t)
+                        (setq vibe-terminal-header-window (selected-window))
+                        ;; Update terminal window to be the bottom window with terminal content
+                        (setq vibe-terminal-window terminal-content-window)))
                   (error
                    (message "Warning: Could not recreate terminal header: %s" header-err)))))
 
