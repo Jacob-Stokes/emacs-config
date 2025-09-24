@@ -311,9 +311,10 @@
   (let ((filtered-buffers '()))
     (dolist (buf (buffer-list))
       (let ((name (buffer-name buf)))
-        ;; Include file buffers and docker management buffers
+        ;; Include file buffers and management buffers
         (when (and (or (buffer-file-name buf)  ; Has an associated file
                        (string-match "\\*docker-" name)  ; Docker management buffers
+                       (string-match "\\*magit\\|magit:" name)  ; Magit buffers
                        (string-match "\\*dashboard\\*" name))  ; Dashboard
                    (not (string-match "^ " name))     ; Not a hidden buffer
                    (not (string-match "\\*treemacs\\*\\|\\*Treemacs" name))
@@ -350,6 +351,7 @@
   "Enable tab-line-mode only in file buffers and docker management buffers."
   (if (and (or (not (string-match "^\\*" (buffer-name)))  ; Regular files
                (string-match "\\*docker-" (buffer-name))  ; Docker buffers
+               (string-match "\\*magit\\|magit:" (buffer-name))  ; Magit buffers
                (string-match "\\*dashboard\\*" (buffer-name)))  ; Dashboard
            (not (string-match "\\*treemacs\\*\\|\\*Treemacs" (buffer-name)))
            (not (eq major-mode 'term-mode))
@@ -365,8 +367,14 @@
 (global-set-key (kbd "C-c ]") 'tab-line-switch-to-next-tab)     ; Next tab
 (global-set-key (kbd "C-c [") 'tab-line-switch-to-prev-tab)     ; Previous tab
 
-;; Quick restart Emacs
-(global-set-key (kbd "C-c r") 'restart-emacs)
+;; Quick restart Emacs without process confirmation
+(defun vibe-restart-emacs-force ()
+  "Restart Emacs without asking about killing processes."
+  (interactive)
+  (let ((confirm-kill-processes nil))  ; Skip process kill confirmation
+    (restart-emacs)))
+
+(global-set-key (kbd "C-c r") 'vibe-restart-emacs-force)
 
 ;; Keybinding to manually switch animation
 (global-set-key (kbd "C-c n") 'switch-animation-mode)
@@ -393,7 +401,7 @@
  '(package-selected-packages
    '(all-the-icons beacon company dashboard docker doom-modeline
 		   doom-themes fireplace highlight-indent-guides
-		   imenu-list nyan-mode rainbow-delimiters
+		   imenu-list magit nyan-mode rainbow-delimiters
 		   rainbow-mode restart-emacs treemacs-projectile
 		   vterm)))
 (custom-set-faces
